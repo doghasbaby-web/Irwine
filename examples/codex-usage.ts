@@ -209,7 +209,7 @@ async function runAllExamples() {
   try {
     console.log('╔════════════════════════════════════════════════════════════╗');
     console.log('║   OpenAI Codex Functions - Top 5 Popular Capabilities     ║');
-    console.log('║   Implemented in Dao Code (道生三)                          ║');
+    console.log('║   Implemented in Dao Code (Dao Sheng San)                   ║');
     console.log('╚════════════════════════════════════════════════════════════╝');
 
     await exampleCodeCompletion();

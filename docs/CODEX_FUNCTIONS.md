@@ -1,6 +1,6 @@
 # OpenAI Codex Functions Integration
 
-This document describes the **Top 5 most popular OpenAI Codex functions** that have been integrated into the Dao Code (道生三) system.
+This document describes the **Top 5 most popular OpenAI Codex functions** that have been integrated into the Dao Code (Dao Sheng San) system.
 
 ## Overview
 
@@ -313,4 +313,4 @@ Potential additions based on community feedback:
 
 **Last Updated**: 2025-01-14
 **Version**: 1.0.0
-**Author**: Dao Code (道生三) Team
+**Author**: Dao Code (Dao Sheng San) Team

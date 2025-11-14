@@ -78,7 +78,7 @@ export function validateConfig(config: Config): { valid: boolean; errors: string
   const hasCustomProvider = config.customProviders && config.customProviders.length > 0;
 
   if (!hasBuiltInApiKey && !hasCustomProvider) {
-    errors.push('至少需要配置一个 AI 模型的 API Key 或自定义提供商');
+    errors.push('At least one AI model API Key or custom provider must be configured');
   }
 
   // For three-agent mode, we need at least 1 valid provider
@@ -87,7 +87,7 @@ export function validateConfig(config: Config): { valid: boolean; errors: string
     const totalProviders = validBuiltInKeys.length + (config.customProviders?.length || 0);
 
     if (totalProviders < 1) {
-      errors.push('三 Agent 模式至少需要一个有效的提供商配置');
+      errors.push('Three-Agent mode requires at least one valid provider configuration');
     }
   }
 

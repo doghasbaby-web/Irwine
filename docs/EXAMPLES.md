@@ -1,112 +1,112 @@
-# 使用示例
+# Usage Examples
 
-本文档提供了几个实际使用 Dao Code 的完整示例。
+This document provides several complete examples of using Dao Code in practice.
 
-## 示例 1: 实现 JWT 认证中间件
+## Example 1: Implementing JWT Authentication Middleware
 
-### 场景
+### Scenario
 
-你需要为 Express 应用实现一个 JWT 认证中间件。
+You need to implement a JWT authentication middleware for an Express application.
 
-### 操作步骤
+### Steps
 
-1. **启动程序**
+1. **Launch the Program**
 
 ```bash
 dao-code interactive
 ```
 
-2. **输入需求**
+2. **Input Requirements**
 
 ```
-实现一个 Express 中间件用于 JWT 认证，要求：
-- 从 Authorization header 中提取 token
-- 验证 token 的有效性
-- 支持 token 过期处理
-- 提供用户信息到 req.user
-- 完善的错误处理
+Implement an Express middleware for JWT authentication, requirements:
+- Extract token from Authorization header
+- Validate token validity
+- Support token expiration handling
+- Provide user information to req.user
+- Comprehensive error handling
 ```
 
-3. **观察辩论过程**
+3. **Observe the Debate Process**
 
-**第一轮辩论**
+**Round One Debate**
 
-正方（Claude）提出方案：
+Proposer (Claude) proposes solutions:
 ```
-方案一：基础 JWT 验证中间件
-- 使用 jsonwebtoken 库
-- 简单的验证逻辑
-- 适合快速开发
+Solution One: Basic JWT Verification Middleware
+- Use jsonwebtoken library
+- Simple verification logic
+- Suitable for rapid development
 
-方案二：JWT + Redis 缓存
-- token 黑名单机制
-- 支持主动撤销
-- 更好的安全性
+Solution Two: JWT + Redis Caching
+- Token blacklist mechanism
+- Support active revocation
+- Better security
 
-方案三：双 token 机制
+Solution Three: Dual Token Mechanism
 - Access Token + Refresh Token
-- 短期 token 提升安全性
-- 长期 token 改善用户体验
+- Short-term tokens enhance security
+- Long-term tokens improve user experience
 ```
 
-反方（GPT-4）质疑：
+Challenger (GPT-4) questions:
 ```
-方案一问题：
-- 缺少 token 撤销机制
-- 无法处理用户权限变更
-- 密钥管理不够安全
+Solution One Issues:
+- Lacks token revocation mechanism
+- Cannot handle user permission changes
+- Insufficient key management security
 
-方案二问题：
-- 引入 Redis 依赖，增加复杂度
-- 性能开销（每次请求查询 Redis）
-- 单点故障风险
+Solution Two Issues:
+- Introduces Redis dependency, increases complexity
+- Performance overhead (query Redis on each request)
+- Single point of failure risk
 
-方案三问题：
-- 实现复杂度高
-- 需要额外的刷新端点
-- 客户端需要处理 token 刷新逻辑
-```
-
-**第二轮辩论**
-
-正方改进方案...
-
-反方继续质疑...
-
-**第三轮 - 裁判总结**
-
-裁判（Gemini）综合分析：
-```
-推荐方案：
-
-1. 方案一（改进版）- 快速实现
-   复杂度: Low
-   适用: MVP、小型项目
-   优点: 简单、易维护
-   缺点: 功能有限
-
-2. 方案二（优化版）- 平衡方案
-   复杂度: Medium
-   适用: 大多数生产环境
-   优点: 安全性好、可扩展
-   缺点: 需要 Redis
-
-3. 方案三（简化版）- 最佳体验
-   复杂度: High
-   适用: 大型应用、对用户体验要求高
-   优点: 安全且用户友好
-   缺点: 实现复杂
+Solution Three Issues:
+- High implementation complexity
+- Requires additional refresh endpoint
+- Client needs to handle token refresh logic
 ```
 
-4. **选择方案**
+**Round Two Debate**
 
-选择方案 2（优化版）
+Proposer improves solutions...
 
-5. **编码协同过程**
+Challenger continues questioning...
 
-**第一轮编码**
+**Round Three - Judge Summary**
 
-编写者（Claude）:
+Judge (Gemini) comprehensive analysis:
+```
+Recommended Solutions:
+
+1. Solution One (Improved Version) - Quick Implementation
+   Complexity: Low
+   Suitable for: MVP, small projects
+   Pros: Simple, easy to maintain
+   Cons: Limited features
+
+2. Solution Two (Optimized Version) - Balanced Solution
+   Complexity: Medium
+   Suitable for: Most production environments
+   Pros: Good security, scalable
+   Cons: Requires Redis
+
+3. Solution Three (Simplified Version) - Best Experience
+   Complexity: High
+   Suitable for: Large applications, high user experience requirements
+   Pros: Secure and user-friendly
+   Cons: Complex implementation
+```
+
+4. **Select Solution**
+
+Choose Solution 2 (Optimized Version)
+
+5. **Coding Collaboration Process**
+
+**Round One Coding**
+
+Writer (Claude):
 ```typescript
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
@@ -161,35 +161,35 @@ export const authMiddleware = async (
 };
 ```
 
-审查者（GPT-4）评论：
+Reviewer (GPT-4) comments:
 ```
-1. 缺少 Redis 连接错误处理
-2. JWT_SECRET 环境变量应该有默认值或更好的验证
-3. 应该添加 TypeScript 类型扩展for Express Request
-4. Redis 操作应该用 Promise 包装
-5. 建议添加日志记录
+1. Missing Redis connection error handling
+2. JWT_SECRET environment variable should have default value or better validation
+3. Should add TypeScript type extension for Express Request
+4. Redis operations should be wrapped with Promise
+5. Recommend adding logging
 ```
 
-检查者（Gemini）检查：
+Inspector (Gemini) inspection:
 ```
 DECISION: REJECTED
 
 ISSUES:
-- [CRITICAL] Redis 客户端未正确初始化和连接
-- [CRITICAL] 缺少对 JWT_SECRET 的验证
-- [WARNING] 错误处理不够全面
-- [WARNING] 缺少类型定义扩展
-- [INFO] 建议添加请求日志
+- [CRITICAL] Redis client not properly initialized and connected
+- [CRITICAL] Missing JWT_SECRET validation
+- [WARNING] Insufficient error handling
+- [WARNING] Missing type definition extensions
+- [INFO] Recommend adding request logging
 
 SUGGESTIONS:
-- 使用 async/await 包装 Redis 操作
-- 添加配置验证
-- 完善类型定义
+- Use async/await to wrap Redis operations
+- Add configuration validation
+- Improve type definitions
 ```
 
-**第二轮编码（角色轮换）**
+**Round Two Coding (Role Rotation)**
 
-编写者（GPT-4）改进代码:
+Writer (GPT-4) improves code:
 ```typescript
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
@@ -307,48 +307,48 @@ export function createAuthMiddleware(config: AuthConfig) {
 // });
 ```
 
-审查者（Gemini）:
+Reviewer (Gemini):
 ```
-优秀的改进！
-1. 类设计清晰
-2. 配置验证完善
-3. 错误处理全面
-4. 类型定义正确
-5. Redis 降级处理得当
+Excellent improvements!
+1. Clear class design
+2. Complete configuration validation
+3. Comprehensive error handling
+4. Correct type definitions
+5. Proper Redis fallback handling
 
-小建议：
-- 添加单元测试示例
-- 考虑添加 rate limiting
+Minor suggestions:
+- Add unit test examples
+- Consider adding rate limiting
 ```
 
-检查者（Claude）:
+Inspector (Claude):
 ```
 DECISION: APPROVED
 
-ISSUES: (无严重问题)
+ISSUES: (no critical issues)
 
 SUGGESTIONS:
-- 可以添加 JSDoc 注释
-- 考虑导出接口定义供外部使用
-- 可以添加配置项用于自定义错误消息
+- Can add JSDoc comments
+- Consider exporting interface definitions for external use
+- Can add configuration options for custom error messages
 ```
 
-6. **获得最终代码**
+6. **Get Final Code**
 
-✓ 代码生成完成！包含完整的 JWT 认证中间件实现。
+✓ Code generation complete! Includes complete JWT authentication middleware implementation.
 
 ---
 
-## 示例 2: 数据库查询优化
+## Example 2: Database Query Optimization
 
-### 场景
+### Scenario
 
-你的应用有一个慢查询需要优化。
+Your application has a slow query that needs optimization.
 
-### 需求描述
+### Requirement Description
 
 ```
-优化以下 SQL 查询：
+Optimize the following SQL query:
 
 SELECT
   u.id, u.name, u.email,
@@ -361,45 +361,45 @@ GROUP BY u.id
 HAVING order_count > 5
 ORDER BY total_spent DESC
 
-当前问题：
-- 用户表有 100 万条记录
-- 订单表有 500 万条记录
-- 查询需要 30 秒
-- 需要优化到 1 秒内
+Current issues:
+- Users table has 1 million records
+- Orders table has 5 million records
+- Query takes 30 seconds
+- Need to optimize to under 1 second
 ```
 
-### 辩论产出的方案
+### Solutions from Debate
 
-1. **方案一：添加索引**
-   - 在关键字段上添加索引
-   - 简单有效
+1. **Solution One: Add Indexes**
+   - Add indexes on key fields
+   - Simple and effective
 
-2. **方案二：物化视图**
-   - 预计算聚合结果
-   - 查询极快，但占用空间
+2. **Solution Two: Materialized View**
+   - Pre-calculate aggregated results
+   - Extremely fast queries, but uses space
 
-3. **方案三：查询重写 + 分区**
-   - 重构查询逻辑
-   - 表分区
-   - 综合优化
+3. **Solution Three: Query Rewrite + Partitioning**
+   - Refactor query logic
+   - Table partitioning
+   - Comprehensive optimization
 
-### 最终代码
+### Final Code
 
-选择方案 3 后，生成的优化方案包括：
+After selecting Solution 3, the generated optimization solution includes:
 
 ```sql
--- 1. 添加索引
+-- 1. Add indexes
 CREATE INDEX idx_users_created_at ON users(created_at);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_user_total ON orders(user_id, total);
 
--- 2. 分区表（如果支持）
+-- 2. Partition table (if supported)
 ALTER TABLE orders PARTITION BY RANGE (YEAR(created_at)) (
   PARTITION p2024 VALUES LESS THAN (2025),
   PARTITION p2025 VALUES LESS THAN (2026)
 );
 
--- 3. 优化后的查询
+-- 3. Optimized query
 WITH active_users AS (
   SELECT id
   FROM users
@@ -428,43 +428,43 @@ ORDER BY uo.total_spent DESC;
 
 ---
 
-## 示例 3: React 组件重构
+## Example 3: React Component Refactoring
 
-### 场景
+### Scenario
 
-重构一个复杂的 React 组件。
+Refactor a complex React component.
 
-### 需求
+### Requirements
 
 ```
-重构以下组件，改进可读性和性能：
+Refactor the following component to improve readability and performance:
 
-当前组件：
-- 500 行代码
-- 包含业务逻辑、UI、数据获取
-- 没有类型定义
-- 难以测试
+Current component:
+- 500 lines of code
+- Contains business logic, UI, and data fetching
+- No type definitions
+- Difficult to test
 
-要求：
-- 使用 TypeScript
-- 遵循 SOLID 原则
-- 易于测试
-- 性能优化
+Requirements:
+- Use TypeScript
+- Follow SOLID principles
+- Easy to test
+- Performance optimization
 ```
 
-### 辩论结果
+### Debate Results
 
-三个方案从不同角度分析：
-1. 组件拆分策略
-2. 状态管理方式
-3. 性能优化技巧
+Three solutions analyze from different perspectives:
+1. Component splitting strategy
+2. State management approach
+3. Performance optimization techniques
 
-### 最终输出
+### Final Output
 
-经过三轮编码迭代，产出：
+After three rounds of coding iterations, produces:
 
 ```typescript
-// types.ts - 类型定义
+// types.ts - Type definitions
 export interface User {
   id: string;
   name: string;
@@ -476,7 +476,7 @@ export interface UserFormProps {
   initialData?: Partial<User>;
 }
 
-// hooks/useUserForm.ts - 逻辑分离
+// hooks/useUserForm.ts - Logic separation
 export function useUserForm(initialData?: Partial<User>) {
   const [formData, setFormData] = useState<Partial<User>>(
     initialData || {}
@@ -484,25 +484,25 @@ export function useUserForm(initialData?: Partial<User>) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = useCallback(() => {
-    // 验证逻辑
+    // Validation logic
   }, [formData]);
 
   return { formData, setFormData, errors, validate };
 }
 
-// components/UserForm.tsx - UI 组件
+// components/UserForm.tsx - UI component
 export const UserForm: React.FC<UserFormProps> = memo(({
   onSubmit,
   initialData
 }) => {
   const { formData, setFormData, errors, validate } = useUserForm(initialData);
 
-  // 简洁的 UI 逻辑
+  // Concise UI logic
 });
 ```
 
 ---
 
-## 更多示例
+## More Examples
 
-访问 [GitHub Examples](https://github.com/your-repo/dao-code/tree/main/examples) 查看更多实际使用案例。
+Visit [GitHub Examples](https://github.com/your-repo/dao-code/tree/main/examples) to see more practical use cases.
