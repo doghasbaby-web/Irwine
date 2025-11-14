@@ -148,3 +148,103 @@ export async function askOptionSelection(options: {
 
   return selectedOption;
 }
+
+/**
+ * Ask user to manually input a proposal for coding-only mode
+ */
+export async function askManualProposal(): Promise<Proposal> {
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'title',
+      message: '方案标题:',
+      validate: (input: string) => input.trim().length > 0 || '标题不能为空'
+    },
+    {
+      type: 'editor',
+      name: 'description',
+      message: '方案详细描述（将打开编辑器）:',
+      validate: (input: string) => input.trim().length > 0 || '描述不能为空'
+    },
+    {
+      type: 'editor',
+      name: 'technicalApproach',
+      message: '技术实现方法（将打开编辑器）:',
+      validate: (input: string) => input.trim().length > 0 || '技术方法不能为空'
+    },
+    {
+      type: 'list',
+      name: 'estimatedComplexity',
+      message: '预估复杂度:',
+      choices: [
+        { name: '低', value: 'low' },
+        { name: '中', value: 'medium' },
+        { name: '高', value: 'high' }
+      ],
+      default: 'medium'
+    },
+    {
+      type: 'input',
+      name: 'pros',
+      message: '优点（用逗号分隔）:',
+      default: '灵活,可维护',
+      filter: (input: string) => input.split(',').map(s => s.trim()).filter(s => s)
+    },
+    {
+      type: 'input',
+      name: 'cons',
+      message: '缺点（用逗号分隔）:',
+      default: '开发时间较长',
+      filter: (input: string) => input.split(',').map(s => s.trim()).filter(s => s)
+    }
+  ]);
+
+  return {
+    id: `manual-${Date.now()}`,
+    title: answers.title,
+    description: answers.description,
+    technicalApproach: answers.technicalApproach,
+    estimatedComplexity: answers.estimatedComplexity,
+    pros: answers.pros,
+    cons: answers.cons
+  };
+}
+
+/**
+ * Ask whether to load saved session or start new
+ */
+export async function askSessionAction(): Promise<'new' | 'load'> {
+  const { action } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'action',
+      message: '选择操作:',
+      choices: [
+        { name: '创建新方案', value: 'new' },
+        { name: '加载已保存的方案', value: 'load' }
+      ]
+    }
+  ]);
+
+  return action;
+}
+
+/**
+ * Ask user to select a saved session
+ */
+export async function askSelectSession(sessions: string[]): Promise<string> {
+  if (sessions.length === 0) {
+    throw new Error('没有已保存的会话');
+  }
+
+  const { session } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'session',
+      message: '选择一个已保存的会话:',
+      choices: sessions.map(s => ({ name: s, value: s }))
+    }
+  ]);
+
+  return session;
+}

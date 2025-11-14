@@ -223,3 +223,30 @@ export function displayThreeOptions(options: {
   }
   console.log('\n');
 }
+
+/**
+ * Start streaming display for an agent
+ */
+export function startStreamingAgent(role: AgentRole, round?: number): void {
+  if (round) {
+    console.log('\n');
+    console.log(chalk.magenta.bold(`══════ 第 ${round} 轮辩论 ══════`));
+    console.log('\n');
+  }
+  console.log(displayAgentRole(role));
+  // Don't add newline, streaming will handle it
+}
+
+/**
+ * Display a streaming chunk (write to stdout without newline)
+ */
+export function displayStreamChunk(chunk: string): void {
+  process.stdout.write(chunk);
+}
+
+/**
+ * Finish streaming display for an agent
+ */
+export function finishStreamingAgent(): void {
+  console.log('\n');
+}

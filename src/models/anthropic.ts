@@ -16,35 +16,37 @@ export class AnthropicClient extends BaseModelClient {
   }
 
   async generateResponse(messages: Message[], config?: any): Promise<string> {
-    try {
-      // Separate system messages from conversation messages
-      const systemMessages = messages.filter(m => m.role === 'system');
-      const conversationMessages = messages.filter(m => m.role !== 'system');
+    return this.withRetry(async () => {
+      try {
+        // Separate system messages from conversation messages
+        const systemMessages = messages.filter(m => m.role === 'system');
+        const conversationMessages = messages.filter(m => m.role !== 'system');
 
-      const systemPrompt = systemMessages.length > 0
-        ? systemMessages.map(m => m.content).join('\n\n')
-        : undefined;
+        const systemPrompt = systemMessages.length > 0
+          ? systemMessages.map(m => m.content).join('\n\n')
+          : undefined;
 
-      const response = await this.client.messages.create({
-        model: this.modelName,
-        max_tokens: config?.maxTokens || 4096,
-        temperature: config?.temperature || 1.0,
-        system: systemPrompt,
-        messages: conversationMessages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'assistant',
-          content: m.content
-        }))
-      });
+        const response = await this.client.messages.create({
+          model: this.modelName,
+          max_tokens: config?.maxTokens || 4096,
+          temperature: config?.temperature || 1.0,
+          system: systemPrompt,
+          messages: conversationMessages.map(m => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content
+          }))
+        });
 
-      const textContent = response.content.find(c => c.type === 'text');
-      if (!textContent || textContent.type !== 'text') {
-        throw new Error('No text content in response');
+        const textContent = response.content.find(c => c.type === 'text');
+        if (!textContent || textContent.type !== 'text') {
+          throw new Error('No text content in response');
+        }
+
+        return textContent.text;
+      } catch (error) {
+        this.handleError(error, 'generateResponse');
       }
-
-      return textContent.text;
-    } catch (error) {
-      this.handleError(error, 'generateResponse');
-    }
+    });
   }
 
   async *streamResponse(messages: Message[], config?: any): AsyncGenerator<string> {
