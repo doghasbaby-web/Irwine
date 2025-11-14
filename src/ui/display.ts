@@ -87,6 +87,11 @@ export function displayProposals(proposals: Proposal[]): void {
 export function displayCodingIteration(iteration: CodingIteration): void {
   console.log('\n');
   console.log(chalk.magenta.bold(`══════ 第 ${iteration.iteration} 轮编码 ══════`));
+
+  // Show role rotation indicator for iterations > 1
+  if (iteration.iteration > 1) {
+    console.log(chalk.cyan('♻️  角色已轮换'));
+  }
   console.log('\n');
 
   console.log(chalk.green('【编写者】'), displayAgentRole(iteration.writerAgent));
@@ -182,4 +187,39 @@ function formatCode(code: string): string {
  */
 export function displaySpinner(message: string): void {
   console.log(chalk.cyan('⏳'), chalk.white(message));
+}
+
+/**
+ * Display three implementation options
+ */
+export function displayThreeOptions(options: {
+  option1: string;
+  option2: string;
+  option3: string;
+}): void {
+  console.log('\n');
+  console.log(chalk.cyan.bold('════════ 三个实现选项 ════════'));
+  console.log(chalk.gray('三个 Agent 分别提出了不同的实现方案：'));
+  console.log('\n');
+
+  console.log(chalk.green.bold('【选项 1 - 正方提案】'));
+  console.log(chalk.white(formatMessage(options.option1.substring(0, 300))));
+  if (options.option1.length > 300) {
+    console.log(chalk.gray('... (内容已截断)'));
+  }
+  console.log('\n');
+
+  console.log(chalk.red.bold('【选项 2 - 反方提案】'));
+  console.log(chalk.white(formatMessage(options.option2.substring(0, 300))));
+  if (options.option2.length > 300) {
+    console.log(chalk.gray('... (内容已截断)'));
+  }
+  console.log('\n');
+
+  console.log(chalk.blue.bold('【选项 3 - 裁判提案】'));
+  console.log(chalk.white(formatMessage(options.option3.substring(0, 300))));
+  if (options.option3.length > 300) {
+    console.log(chalk.gray('... (内容已截断)'));
+  }
+  console.log('\n');
 }

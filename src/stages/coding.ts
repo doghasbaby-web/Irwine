@@ -254,27 +254,36 @@ SUGGESTIONS:
 
   /**
    * Rotate roles for next iteration
+   * Writer -> Inspector, Reviewer -> Writer, Inspector -> Reviewer
    */
   private rotateRoles(): void {
     if (!this.session) return;
 
-    // Use coordinator's rotation mechanism
-    this.coordinator.rotateRoles();
+    // Rotate: Writer -> Inspector, Reviewer -> Writer, Inspector -> Reviewer
+    const rotationMap = {
+      [AgentRole.PROPOSER]: AgentRole.JUDGE,
+      [AgentRole.CHALLENGER]: AgentRole.PROPOSER,
+      [AgentRole.JUDGE]: AgentRole.CHALLENGER
+    };
 
-    // Update session role assignments
-    const roles = [AgentRole.PROPOSER, AgentRole.CHALLENGER, AgentRole.JUDGE];
-    this.session.currentWriter = roles[0];
-    this.session.currentReviewer = roles[1];
-    this.session.currentInspector = roles[2];
+    // Rotate the role assignments
+    const newWriter = rotationMap[this.session.currentWriter];
+    const newReviewer = rotationMap[this.session.currentReviewer];
+    const newInspector = rotationMap[this.session.currentInspector];
+
+    this.session.currentWriter = newWriter;
+    this.session.currentReviewer = newReviewer;
+    this.session.currentInspector = newInspector;
+
+    // Also rotate the coordinator's agents to maintain consistency
+    this.coordinator.rotateRoles();
   }
 
   /**
-   * Update agent's system prompt temporarily
+   * Update agent's system prompt dynamically
    */
-  private async updateAgentSystemPrompt(_agent: Agent, _newPrompt: string): Promise<void> {
-    // This is a simplified approach - in production you might want to create a new agent
-    // For now, we'll add it as a user message
-    // The proper way would be to modify the Agent class to support prompt updates
+  private async updateAgentSystemPrompt(agent: Agent, newPrompt: string): Promise<void> {
+    agent.updateSystemPrompt(newPrompt);
   }
 
   /**
@@ -294,5 +303,29 @@ SUGGESTIONS:
 
     const lastIteration = this.session.iterations[this.session.iterations.length - 1];
     return lastIteration.code;
+  }
+
+  /**
+   * Generate three implementation options when uncertain
+   * Each agent proposes a different approach
+   */
+  async generateThreeOptions(
+    task: string,
+    context?: string
+  ): Promise<{ option1: string; option2: string; option3: string }> {
+    const proposer = this.coordinator.getAgent(AgentRole.PROPOSER);
+    const challenger = this.coordinator.getAgent(AgentRole.CHALLENGER);
+    const judge = this.coordinator.getAgent(AgentRole.JUDGE);
+
+    const basePrompt = `任务：${task}\n\n${context ? `上下文：${context}\n\n` : ''}请提供一个具体的实现方案（代码或设计）。`;
+
+    // Get three different options from three agents
+    const [option1, option2, option3] = await Promise.all([
+      proposer.think(basePrompt),
+      challenger.think(basePrompt),
+      judge.think(basePrompt)
+    ]);
+
+    return { option1, option2, option3 };
   }
 }

@@ -124,3 +124,27 @@ export async function askMainAction(): Promise<'clarify' | 'code' | 'interactive
 
   return action;
 }
+
+/**
+ * Ask user to select from three implementation options
+ */
+export async function askOptionSelection(options: {
+  option1: string;
+  option2: string;
+  option3: string;
+}): Promise<1 | 2 | 3> {
+  const { selectedOption } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'selectedOption',
+      message: '请选择一个实现方案:',
+      choices: [
+        { name: '选项 1 - 正方提案', value: 1 },
+        { name: '选项 2 - 反方提案', value: 2 },
+        { name: '选项 3 - 裁判提案', value: 3 }
+      ]
+    }
+  ]);
+
+  return selectedOption;
+}

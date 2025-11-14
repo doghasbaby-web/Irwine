@@ -142,6 +142,38 @@ export class Agent {
   }
 
   /**
+   * Update system prompt dynamically
+   */
+  updateSystemPrompt(newPrompt: string): void {
+    // Update config
+    this.config.systemPrompt = newPrompt;
+
+    // Update conversation history - replace first system message
+    if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+      this.conversationHistory[0] = {
+        role: 'system',
+        content: newPrompt,
+        metadata: {
+          agentRole: this.role,
+          modelProvider: this.config.modelProvider,
+          timestamp: Date.now()
+        }
+      };
+    } else {
+      // If no system message exists, add one at the beginning
+      this.conversationHistory.unshift({
+        role: 'system',
+        content: newPrompt,
+        metadata: {
+          agentRole: this.role,
+          modelProvider: this.config.modelProvider,
+          timestamp: Date.now()
+        }
+      });
+    }
+  }
+
+  /**
    * Get agent identity string
    */
   getIdentity(): string {
