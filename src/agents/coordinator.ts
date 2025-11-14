@@ -15,11 +15,33 @@ export class ThreeAgentCoordinator {
     openai?: string;
     google?: string;
   };
+  private performanceMetrics: Map<ModelProvider, {
+    successCount: number;
+    failureCount: number;
+    avgResponseTime: number;
+    totalIterations: number;
+  }> = new Map();
 
   constructor(config: ThreeAgentConfig, apiKeys: any) {
     this.config = config;
     this.apiKeys = apiKeys;
     this.initializeAgents();
+    this.initializePerformanceMetrics();
+  }
+
+  /**
+   * Initialize performance metrics for all providers
+   */
+  private initializePerformanceMetrics(): void {
+    const providers = [ModelProvider.ANTHROPIC, ModelProvider.OPENAI, ModelProvider.GOOGLE];
+    for (const provider of providers) {
+      this.performanceMetrics.set(provider, {
+        successCount: 0,
+        failureCount: 0,
+        avgResponseTime: 0,
+        totalIterations: 0
+      });
+    }
   }
 
   /**
@@ -79,32 +101,36 @@ export class ThreeAgentCoordinator {
    * Rotate agent roles for the next iteration
    */
   rotateRoles(): void {
-    if (this.config.rotationStrategy !== 'sequential') {
-      // For now, only implement sequential rotation
-      console.warn('Only sequential rotation is currently supported');
+    switch (this.config.rotationStrategy) {
+      case 'sequential':
+        this.rotateSequential();
+        break;
+      case 'random':
+        this.rotateRandom();
+        break;
+      case 'performance-based':
+        this.rotatePerformanceBased();
+        break;
+      default:
+        this.rotateSequential();
     }
+  }
 
-    // Get current configurations
-    const currentConfigs = new Map<AgentRole, AgentConfig>();
-    for (const [role, agent] of this.agents.entries()) {
-      currentConfigs.set(role, agent.config);
-    }
-
-    // Rotate: Proposer -> Challenger -> Judge -> Proposer
+  /**
+   * Sequential rotation: Proposer -> Challenger -> Judge -> Proposer
+   */
+  private rotateSequential(): void {
     const rotationMap = {
       [AgentRole.PROPOSER]: AgentRole.CHALLENGER,
       [AgentRole.CHALLENGER]: AgentRole.JUDGE,
       [AgentRole.JUDGE]: AgentRole.PROPOSER
     };
 
-    // Create new agent assignments
     const newAgents = new Map<AgentRole, Agent>();
 
     for (const [currentRole, agent] of this.agents.entries()) {
       const newRole = rotationMap[currentRole];
       const newConfig = { ...agent.config, role: newRole };
-
-      // Update system prompt for new role
       newConfig.systemPrompt = AGENT_PROMPTS[newRole];
 
       const apiKey = this.getApiKeyForProvider(newConfig.modelProvider);
@@ -117,6 +143,146 @@ export class ThreeAgentCoordinator {
     }
 
     this.agents = newAgents;
+  }
+
+  /**
+   * Random rotation: Randomly shuffle providers across roles
+   */
+  private rotateRandom(): void {
+    const roles = [AgentRole.PROPOSER, AgentRole.CHALLENGER, AgentRole.JUDGE];
+    const providers = Array.from(this.agents.values()).map(a => a.config.modelProvider);
+
+    // Fisher-Yates shuffle
+    for (let i = providers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [providers[i], providers[j]] = [providers[j], providers[i]];
+    }
+
+    const newAgents = new Map<AgentRole, Agent>();
+
+    for (let i = 0; i < roles.length; i++) {
+      const role = roles[i];
+      const provider = providers[i];
+
+      const newConfig: AgentConfig = {
+        role,
+        modelProvider: provider,
+        modelName: this.getDefaultModelName(provider),
+        systemPrompt: AGENT_PROMPTS[role]
+      };
+
+      const apiKey = this.getApiKeyForProvider(provider);
+      if (!apiKey) {
+        throw new Error(`API key not found for provider: ${provider}`);
+      }
+
+      const newAgent = new Agent(newConfig, apiKey);
+      newAgents.set(role, newAgent);
+    }
+
+    this.agents = newAgents;
+  }
+
+  /**
+   * Performance-based rotation: Best performer gets the Judge role
+   */
+  private rotatePerformanceBased(): void {
+    const roles = [AgentRole.PROPOSER, AgentRole.CHALLENGER, AgentRole.JUDGE];
+    const providers = Array.from(this.agents.values()).map(a => a.config.modelProvider);
+
+    // Calculate performance scores
+    const scores = providers.map(provider => {
+      const metrics = this.performanceMetrics.get(provider);
+      if (!metrics || metrics.totalIterations === 0) {
+        return { provider, score: 0.5 }; // Neutral score for new providers
+      }
+
+      const successRate = metrics.successCount / (metrics.successCount + metrics.failureCount);
+      const speedScore = 1 / (metrics.avgResponseTime + 1); // Lower response time = higher score
+      return {
+        provider,
+        score: successRate * 0.7 + speedScore * 0.3 // Weight success more than speed
+      };
+    });
+
+    // Sort by score (best first)
+    scores.sort((a, b) => b.score - a.score);
+
+    // Assign: Best -> Judge, Second -> Proposer, Third -> Challenger
+    const roleAssignment = [
+      { role: AgentRole.JUDGE, provider: scores[0].provider },
+      { role: AgentRole.PROPOSER, provider: scores[1].provider },
+      { role: AgentRole.CHALLENGER, provider: scores[2].provider }
+    ];
+
+    const newAgents = new Map<AgentRole, Agent>();
+
+    for (const assignment of roleAssignment) {
+      const newConfig: AgentConfig = {
+        role: assignment.role,
+        modelProvider: assignment.provider,
+        modelName: this.getDefaultModelName(assignment.provider),
+        systemPrompt: AGENT_PROMPTS[assignment.role]
+      };
+
+      const apiKey = this.getApiKeyForProvider(assignment.provider);
+      if (!apiKey) {
+        throw new Error(`API key not found for provider: ${assignment.provider}`);
+      }
+
+      const newAgent = new Agent(newConfig, apiKey);
+      newAgents.set(assignment.role, newAgent);
+    }
+
+    this.agents = newAgents;
+  }
+
+  /**
+   * Get default model name for a provider
+   */
+  private getDefaultModelName(provider: ModelProvider): string {
+    switch (provider) {
+      case ModelProvider.ANTHROPIC:
+        return 'claude-sonnet-4-5-20250929';
+      case ModelProvider.OPENAI:
+        return 'gpt-4-turbo';
+      case ModelProvider.GOOGLE:
+        return 'gemini-2.0-flash-exp';
+      default:
+        throw new Error(`Unknown provider: ${provider}`);
+    }
+  }
+
+  /**
+   * Record performance metrics after an iteration
+   */
+  recordPerformance(provider: ModelProvider, success: boolean, responseTime: number): void {
+    const metrics = this.performanceMetrics.get(provider);
+    if (!metrics) return;
+
+    if (success) {
+      metrics.successCount++;
+    } else {
+      metrics.failureCount++;
+    }
+
+    metrics.totalIterations++;
+    metrics.avgResponseTime =
+      (metrics.avgResponseTime * (metrics.totalIterations - 1) + responseTime) / metrics.totalIterations;
+
+    this.performanceMetrics.set(provider, metrics);
+  }
+
+  /**
+   * Get performance metrics for all providers
+   */
+  getPerformanceMetrics(): Map<ModelProvider, {
+    successCount: number;
+    failureCount: number;
+    avgResponseTime: number;
+    totalIterations: number;
+  }> {
+    return new Map(this.performanceMetrics);
   }
 
   /**
@@ -184,6 +350,69 @@ export class ThreeAgentCoordinator {
       challengerResponse,
       judgeResponse
     };
+  }
+
+  /**
+   * Execute a debate round with streaming output
+   */
+  async *executeDebateRoundStream(
+    userQuery: string,
+    round: number,
+    onChunk?: (role: AgentRole, chunk: string) => void
+  ): AsyncGenerator<{
+    role: AgentRole;
+    chunk: string;
+    isComplete?: boolean;
+    fullResponse?: string;
+  }> {
+    const proposer = this.getAgent(AgentRole.PROPOSER);
+    const challenger = this.getAgent(AgentRole.CHALLENGER);
+    const judge = this.getAgent(AgentRole.JUDGE);
+
+    // Proposer speaks first
+    const proposerPrompt = round === 1
+      ? `用户需求：${userQuery}\n\n请提出 2-3 个可行的技术方案。`
+      : `继续完善你的方案，回应反方的质疑。`;
+
+    let proposerResponse = '';
+    for await (const chunk of proposer.thinkStream(proposerPrompt)) {
+      proposerResponse += chunk;
+      if (onChunk) onChunk(AgentRole.PROPOSER, chunk);
+      yield { role: AgentRole.PROPOSER, chunk };
+    }
+    yield { role: AgentRole.PROPOSER, chunk: '', isComplete: true, fullResponse: proposerResponse };
+
+    // Challenger responds
+    const challengerContext: Message[] = [{
+      role: 'user',
+      content: `正方提出的方案：\n\n${proposerResponse}\n\n请仔细分析并指出问题。`
+    }];
+
+    let challengerResponse = '';
+    for await (const chunk of challenger.thinkStream(undefined, challengerContext)) {
+      challengerResponse += chunk;
+      if (onChunk) onChunk(AgentRole.CHALLENGER, chunk);
+      yield { role: AgentRole.CHALLENGER, chunk };
+    }
+    yield { role: AgentRole.CHALLENGER, chunk: '', isComplete: true, fullResponse: challengerResponse };
+
+    // Judge analyzes (only on final round)
+    if (round === this.config.debateRounds) {
+      const judgeContext: Message[] = [
+        {
+          role: 'user',
+          content: `正方方案：\n\n${proposerResponse}\n\n反方质疑：\n\n${challengerResponse}\n\n请给出综合分析和最终的 3 个推荐方案。`
+        }
+      ];
+
+      let judgeResponse = '';
+      for await (const chunk of judge.thinkStream(undefined, judgeContext)) {
+        judgeResponse += chunk;
+        if (onChunk) onChunk(AgentRole.JUDGE, chunk);
+        yield { role: AgentRole.JUDGE, chunk };
+      }
+      yield { role: AgentRole.JUDGE, chunk: '', isComplete: true, fullResponse: judgeResponse };
+    }
   }
 }
 

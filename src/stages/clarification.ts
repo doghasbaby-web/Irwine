@@ -77,6 +77,102 @@ export class ClarificationStage {
   }
 
   /**
+   * Execute with streaming output for real-time display
+   */
+  async *executeWithStream(
+    userRequirement: string,
+    numRounds: number = 3
+  ): AsyncGenerator<{
+    type: 'round_start' | 'agent_start' | 'chunk' | 'agent_complete' | 'round_complete' | 'complete';
+    round?: number;
+    role?: import('../types/index.js').AgentRole;
+    chunk?: string;
+    fullResponse?: string;
+    debateRound?: DebateRound;
+    result?: ClarificationResult;
+  }> {
+    this.rounds = [];
+
+    for (let i = 1; i <= numRounds; i++) {
+      yield { type: 'round_start', round: i };
+
+      let proposerResponse = '';
+      let challengerResponse = '';
+      let judgeResponse = '';
+
+      for await (const streamEvent of this.coordinator.executeDebateRoundStream(userRequirement, i)) {
+        if (streamEvent.isComplete) {
+          yield {
+            type: 'agent_complete',
+            role: streamEvent.role,
+            fullResponse: streamEvent.fullResponse
+          };
+
+          if (streamEvent.role === 'proposer' as any) {
+            proposerResponse = streamEvent.fullResponse || '';
+          } else if (streamEvent.role === 'challenger' as any) {
+            challengerResponse = streamEvent.fullResponse || '';
+          } else if (streamEvent.role === 'judge' as any) {
+            judgeResponse = streamEvent.fullResponse || '';
+          }
+        } else {
+          if (!streamEvent.chunk) continue;
+
+          // First chunk for this agent
+          if (streamEvent.chunk && streamEvent.chunk.length > 0) {
+            yield { type: 'chunk', role: streamEvent.role, chunk: streamEvent.chunk };
+          }
+        }
+      }
+
+      // Create debate round after all agents have spoken
+      const debateRound: DebateRound = {
+        round: i,
+        proposerMessage: {
+          role: 'assistant',
+          content: proposerResponse,
+          metadata: {
+            agentRole: this.coordinator.getAgent('proposer' as any).role,
+            timestamp: Date.now()
+          }
+        },
+        challengerMessage: {
+          role: 'assistant',
+          content: challengerResponse,
+          metadata: {
+            agentRole: this.coordinator.getAgent('challenger' as any).role,
+            timestamp: Date.now()
+          }
+        },
+        judgeAnalysis: judgeResponse ? {
+          role: 'assistant',
+          content: judgeResponse,
+          metadata: {
+            agentRole: this.coordinator.getAgent('judge' as any).role,
+            timestamp: Date.now()
+          }
+        } : undefined
+      };
+
+      this.rounds.push(debateRound);
+      yield { type: 'round_complete', round: i, debateRound };
+    }
+
+    // Extract proposals from the final judge's analysis
+    const proposals = await this.extractProposals(
+      this.rounds[this.rounds.length - 1].judgeAnalysis?.content || ''
+    );
+
+    yield {
+      type: 'complete',
+      result: {
+        rounds: this.rounds,
+        proposals
+      }
+    };
+  }
+
+  /**
    * Extract structured proposals from judge's analysis
    */
   private async extractProposals(judgeAnalysis: string): Promise<Proposal[]> {

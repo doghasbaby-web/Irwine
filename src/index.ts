@@ -21,8 +21,18 @@ import {
 import {
   askRequirement,
   askProposalSelection,
-  askConfirmation
+  askConfirmation,
+  askManualProposal,
+  askSessionAction,
+  askSelectSession
 } from './ui/prompts.js';
+import {
+  saveClarificationResult,
+  saveProposal,
+  listProposals,
+  listClarifications,
+  loadSession
+} from './utils/session.js';
 
 export class DaoCodeApp {
   private coordinator: ThreeAgentCoordinator | null = null;
@@ -150,9 +160,16 @@ export class DaoCodeApp {
     displaySpinner('启动三 Agent 辩论...');
     const clarificationResult = await this.runClarification(requirement);
 
+    // Save clarification result
+    const sessionName = await saveClarificationResult(requirement, clarificationResult);
+    displayInfo(`辩论结果已保存: ${sessionName}`);
+
     // Step 3: Select proposal
     const selectedProposal = await askProposalSelection(clarificationResult.proposals);
     displayInfo(`已选择方案: ${selectedProposal.title}`);
+
+    // Save selected proposal
+    await saveProposal(selectedProposal);
 
     // Step 4: Confirm coding
     const shouldCode = await askConfirmation('是否开始编码？');
@@ -178,13 +195,60 @@ export class DaoCodeApp {
   }
 
   /**
-   * Run coding only mode (with manual proposal input)
+   * Run coding only mode (with manual proposal input or loaded session)
    */
   async runCodingOnly(): Promise<void> {
     displayBanner();
 
-    displayInfo('编码模式需要先有一个方案。请先运行需求澄清阶段。');
-    // For now, this would require persisting proposals or manual input
+    let proposal: Proposal;
+
+    // Check if there are saved proposals
+    const savedProposals = await listProposals();
+    const savedClarifications = await listClarifications();
+    const hasSavedSessions = savedProposals.length > 0 || savedClarifications.length > 0;
+
+    if (hasSavedSessions) {
+      const action = await askSessionAction();
+
+      if (action === 'load') {
+        // Load from saved session
+        const allSessions = [...savedClarifications, ...savedProposals];
+        const sessionName = await askSelectSession(allSessions);
+        const sessionData = await loadSession(sessionName);
+
+        if (sessionData.type === 'clarification') {
+          // Let user choose from the proposals in the clarification result
+          proposal = await askProposalSelection(sessionData.result.proposals);
+          displayInfo(`已加载方案: ${proposal.title}`);
+        } else if (sessionData.type === 'proposal') {
+          proposal = sessionData.proposal;
+          displayInfo(`已加载方案: ${proposal.title}`);
+        } else {
+          displayError('未知的会话类型');
+          return;
+        }
+      } else {
+        // Create new manual proposal
+        displayInfo('请手动输入方案信息：');
+        proposal = await askManualProposal();
+
+        // Save the proposal
+        const sessionName = await saveProposal(proposal);
+        displayInfo(`方案已保存: ${sessionName}`);
+      }
+    } else {
+      // No saved sessions, must create new
+      displayInfo('没有已保存的会话。请手动输入方案信息：');
+      proposal = await askManualProposal();
+
+      // Save the proposal
+      const sessionName = await saveProposal(proposal);
+      displayInfo(`方案已保存: ${sessionName}`);
+    }
+
+    // Run coding stage
+    displaySpinner('启动三 Agent 编码协同...');
+    await this.runCoding(proposal);
   }
 }
 
