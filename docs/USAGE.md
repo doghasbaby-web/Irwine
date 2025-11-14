@@ -1,295 +1,295 @@
-# 使用指南
+# Usage Guide
 
-## 快速开始
+## Quick Start
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 配置环境变量
+### 2. Configure Environment Variables
 
-复制 `.env.example` 并创建 `.env` 文件：
+Copy `.env.example` and create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，填入你的 API Keys：
+Edit the `.env` file and fill in your API Keys:
 
 ```env
-# 至少需要配置一个 API Key
+# At least one API Key is required
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 OPENAI_API_KEY=sk-xxxxx
 GOOGLE_API_KEY=xxxxx
 
-# 可选配置
+# Optional configuration
 DEFAULT_MODEL_PROVIDER=anthropic
 ENABLE_THREE_AGENT_MODE=true
 DEBATE_ROUNDS=3
 ```
 
-### 3. 运行程序
+### 3. Run the Program
 
-#### 开发模式
+#### Development Mode
 
 ```bash
 npm run dev
 ```
 
-#### 构建并运行
+#### Build and Run
 
 ```bash
 npm run build
 npm start
 ```
 
-## 使用模式
+## Usage Modes
 
-### 交互式模式（推荐）
+### Interactive Mode (Recommended)
 
-完整体验三 Agent 协同工作流程：
+Experience the complete three-agent collaborative workflow:
 
 ```bash
 dao-code interactive
-# 或
+# or
 dao-code i
 ```
 
-这个模式会引导你完成：
-1. 输入需求
-2. 观看三 Agent 辩论
-3. 选择最佳方案
-4. 三 Agent 协同编码
-5. 获得最终代码
+This mode will guide you through:
+1. Input requirements
+2. Watch three Agents debate
+3. Select the best solution
+4. Three Agents collaborate on coding
+5. Get the final code
 
-### 需求澄清模式
+### Requirements Clarification Mode
 
-只运行需求澄清阶段，产出技术方案：
+Run only the requirements clarification stage to produce technical solutions:
 
 ```bash
 dao-code clarify
-# 或
+# or
 dao-code c
 ```
 
-适用场景：
-- 项目初期的技术选型
-- 需要多角度评估方案
-- 想要看 AI 辩论过程
+Suitable scenarios:
+- Technical selection in early project stages
+- Need multi-perspective solution evaluation
+- Want to watch AI debate process
 
-### 菜单模式
+### Menu Mode
 
-显示主菜单，可以多次执行不同操作：
+Display main menu, can execute different operations multiple times:
 
 ```bash
 dao-code menu
-# 或
+# or
 dao-code m
 ```
 
-### 默认模式
+### Default Mode
 
-直接运行会显示选项菜单：
+Running directly will display the options menu:
 
 ```bash
 dao-code
 ```
 
-## 工作流程详解
+## Detailed Workflow
 
-### 阶段一：需求澄清
+### Stage One: Requirements Clarification
 
-三个 Agent 会进行深度辩论：
+Three Agents engage in in-depth debate:
 
-1. **第一轮**
-   - 正方：提出 2-3 个初步方案
-   - 反方：质疑每个方案的问题
-   - 裁判：记录要点
+1. **Round One**
+   - Proposer: Proposes 2-3 preliminary solutions
+   - Challenger: Questions issues with each solution
+   - Judge: Records key points
 
-2. **第二轮**
-   - 正方：完善方案，回应质疑
-   - 反方：继续深挖潜在风险
-   - 裁判：综合分析
+2. **Round Two**
+   - Proposer: Refines solutions, responds to challenges
+   - Challenger: Continues to dig into potential risks
+   - Judge: Comprehensive analysis
 
-3. **第三轮**（最终轮）
-   - 正方：最终优化
-   - 反方：最后检查
-   - 裁判：产出 3 个最佳方案供选择
+3. **Round Three** (Final Round)
+   - Proposer: Final optimization
+   - Challenger: Final check
+   - Judge: Produces 3 best solutions for selection
 
-### 阶段二：编码协同
+### Stage Two: Coding Collaboration
 
-三个 Agent 采用极限编程模式：
+Three Agents adopt extreme programming mode:
 
-1. **第一轮**
-   - Agent A 编写代码
-   - Agent B 实时审查
-   - Agent C 质量检查
+1. **Round One**
+   - Agent A writes code
+   - Agent B reviews in real-time
+   - Agent C quality checks
 
-2. **后续轮次**（如果需要）
-   - 角色轮换：A → B → C → A
-   - 根据上一轮的问题改进代码
-   - 直到通过检查或达到最大轮次
+2. **Subsequent Rounds** (if needed)
+   - Role rotation: A → B → C → A
+   - Improve code based on previous round issues
+   - Until passing inspection or reaching maximum rounds
 
-## 自定义配置
+## Custom Configuration
 
-### 选择不同的 AI 模型
+### Selecting Different AI Models
 
-启动时可以自定义三个 Agent 使用的模型：
+You can customize models used by the three Agents at startup:
 
 ```bash
 dao-code interactive
-# 程序会询问：是否自定义三个 Agent 的模型？
-# 选择 Yes，然后为每个角色选择模型
+# The program will ask: Customize models for the three Agents?
+# Select Yes, then choose a model for each role
 ```
 
-推荐组合：
+Recommended combinations:
 
-**创新优先**
-- 正方：Claude（理解深刻）
-- 反方：GPT-4（逻辑严密）
-- 裁判：Gemini（多角度分析）
+**Innovation Priority**
+- Proposer: Claude (deep understanding)
+- Challenger: GPT-4 (rigorous logic)
+- Judge: Gemini (multi-perspective analysis)
 
-**稳定优先**
-- 正方：GPT-4（工程实践）
-- 反方：Claude（代码质量）
-- 裁判：GPT-4（决策能力）
+**Stability Priority**
+- Proposer: GPT-4 (engineering practices)
+- Challenger: Claude (code quality)
+- Judge: GPT-4 (decision-making ability)
 
-**成本优先**
-- 全部使用 Gemini（性价比高）
+**Cost Priority**
+- All using Gemini (high cost-effectiveness)
 
-### 调整辩论轮次
+### Adjusting Debate Rounds
 
-在 `.env` 中设置：
+Set in `.env`:
 
 ```env
-DEBATE_ROUNDS=5  # 更深入的辩论
+DEBATE_ROUNDS=5  # More in-depth debate
 ```
 
-## 使用示例
+## Usage Examples
 
-### 示例 1：实现用户认证系统
-
-```
-需求：实现一个 JWT 认证中间件，支持 token 刷新
-
-辩论结果（三个方案）：
-1. 基于 Express 中间件 + Redis 缓存
-2. 无状态 JWT + 短期 token
-3. JWT + Refresh Token 双 token 机制
-
-选择：方案 3
-
-编码结果：
-- 生成完整的认证中间件代码
-- 包含错误处理和安全措施
-- 通过三轮代码审查
-```
-
-### 示例 2：数据库设计
+### Example 1: Implementing User Authentication System
 
 ```
-需求：为电商系统设计订单表结构
+Requirement: Implement a JWT authentication middleware with token refresh support
 
-辩论结果：
-1. 单表设计（简单但扩展性差）
-2. 订单主表 + 订单详情表（经典方案）
-3. 事件溯源模式（高级但复杂）
+Debate Results (Three Solutions):
+1. Express middleware + Redis caching
+2. Stateless JWT + short-term tokens
+3. JWT + Refresh Token dual token mechanism
 
-选择：方案 2
+Selection: Solution 3
 
-编码结果：
-- 完整的表结构 SQL
-- 包含索引和约束
-- 考虑了性能优化
+Coding Results:
+- Generated complete authentication middleware code
+- Includes error handling and security measures
+- Passed three rounds of code review
 ```
 
-## 最佳实践
+### Example 2: Database Design
 
-### 1. 清晰描述需求
-
-❌ 不好的需求：
 ```
-写一个登录功能
+Requirement: Design order table structure for e-commerce system
+
+Debate Results:
+1. Single table design (simple but poor extensibility)
+2. Order main table + order detail table (classic solution)
+3. Event sourcing pattern (advanced but complex)
+
+Selection: Solution 2
+
+Coding Results:
+- Complete table structure SQL
+- Includes indexes and constraints
+- Considered performance optimization
 ```
 
-✅ 好的需求：
+## Best Practices
+
+### 1. Clearly Describe Requirements
+
+❌ Poor requirement:
 ```
-实现一个基于 JWT 的用户登录系统，需要：
-- 支持邮箱和密码登录
-- 密码使用 bcrypt 加密
-- JWT token 有效期 7 天
-- 需要考虑安全性（防止暴力破解等）
+Write a login function
 ```
 
-### 2. 关注辩论过程
+✅ Good requirement:
+```
+Implement a JWT-based user login system, requiring:
+- Support email and password login
+- Password encrypted with bcrypt
+- JWT token validity period of 7 days
+- Need to consider security (prevent brute force attacks, etc.)
+```
 
-不要跳过辩论直接看结果，辩论过程中的质疑和讨论往往能发现重要问题。
+### 2. Focus on the Debate Process
 
-### 3. 理性选择方案
+Don't skip the debate and go straight to the results. The questions and discussions during the debate process often discover important issues.
 
-不要总是选择"最先进"的方案，根据项目实际情况选择：
-- 团队技能水平
-- 时间预算
-- 维护成本
+### 3. Rationally Select Solutions
 
-### 4. 代码后续调整
+Don't always choose the "most advanced" solution. Select based on actual project circumstances:
+- Team skill level
+- Time budget
+- Maintenance cost
 
-生成的代码是起点，不是终点。根据实际项目需求进行调整：
-- 添加项目特定的错误处理
-- 集成到现有代码库
-- 添加测试
+### 4. Subsequent Code Adjustments
 
-## 故障排除
+Generated code is a starting point, not an endpoint. Adjust based on actual project needs:
+- Add project-specific error handling
+- Integrate into existing codebase
+- Add tests
 
-### API Key 问题
+## Troubleshooting
 
-**错误**：`API key is required for anthropic`
+### API Key Issues
 
-**解决**：
-1. 检查 `.env` 文件是否存在
-2. 确认 API Key 格式正确
-3. 重新启动程序
+**Error**: `API key is required for anthropic`
 
-### 网络问题
+**Solution**:
+1. Check if `.env` file exists
+2. Confirm API Key format is correct
+3. Restart the program
 
-**错误**：`API request failed`
+### Network Issues
 
-**解决**：
-1. 检查网络连接
-2. 确认 API 服务是否可用
-3. 考虑使用代理
+**Error**: `API request failed`
 
-### 模型配额
+**Solution**:
+1. Check network connection
+2. Confirm API service availability
+3. Consider using a proxy
 
-**错误**：`Rate limit exceeded`
+### Model Quota
 
-**解决**：
-1. 等待一段时间后重试
-2. 切换到其他模型
-3. 升级 API 账号
+**Error**: `Rate limit exceeded`
 
-## 进阶技巧
+**Solution**:
+1. Wait a while before retrying
+2. Switch to another model
+3. Upgrade API account
 
-### 1. 保存辩论历史
+## Advanced Techniques
 
-可以重定向输出到文件：
+### 1. Save Debate History
+
+You can redirect output to a file:
 
 ```bash
 dao-code clarify > debate-log.txt
 ```
 
-### 2. 批量处理
+### 2. Batch Processing
 
-编写脚本批量处理多个需求（未来功能）
+Write scripts to batch process multiple requirements (future feature)
 
-### 3. 集成到 IDE
+### 3. IDE Integration
 
-作为 VS Code 插件使用（未来功能）
+Use as VS Code extension (future feature)
 
-## 反馈与支持
+## Feedback and Support
 
-- 提交 Issue：[GitHub Issues](https://github.com/your-repo/dao-code/issues)
-- 功能建议：欢迎提交 PR
-- 讨论交流：加入我们的社区
+- Submit Issue: [GitHub Issues](https://github.com/your-repo/dao-code/issues)
+- Feature Suggestions: Welcome to submit PR
+- Discussion: Join our community

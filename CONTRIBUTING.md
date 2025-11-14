@@ -1,115 +1,115 @@
-# 贡献指南
+# Contributing Guide
 
-感谢你对道生三项目的关注！我们欢迎各种形式的贡献。
+Thank you for your interest in the Dao Sheng San project! We welcome contributions of all kinds.
 
-## 如何贡献
+## How to Contribute
 
-### 报告 Bug
+### Reporting Bugs
 
-在提交 Bug 报告前，请：
+Before submitting a bug report, please:
 
-1. 检查是否已有相同的 Issue
-2. 使用最新版本验证问题是否仍然存在
-3. 提供详细的复现步骤
+1. Check if there's already an existing Issue
+2. Verify the problem still exists in the latest version
+3. Provide detailed reproduction steps
 
-创建 Issue 时请包含：
-- 环境信息（OS、Node.js 版本等）
-- 复现步骤
-- 预期行为
-- 实际行为
-- 错误日志
+When creating an Issue, please include:
+- Environment information (OS, Node.js version, etc.)
+- Reproduction steps
+- Expected behavior
+- Actual behavior
+- Error logs
 
-### 提交功能建议
+### Suggesting Features
 
-我们欢迎新功能建议！请在 Issue 中描述：
-- 功能的使用场景
-- 预期的行为
-- 可能的实现方式
-- 替代方案
+We welcome new feature suggestions! Please describe in the Issue:
+- Use case for the feature
+- Expected behavior
+- Possible implementation approaches
+- Alternative solutions
 
-### Pull Request 流程
+### Pull Request Process
 
-1. **Fork 仓库**
+1. **Fork the Repository**
 
 ```bash
 git clone https://github.com/your-username/dao-code.git
 cd dao-code
 ```
 
-2. **创建分支**
+2. **Create a Branch**
 
 ```bash
 git checkout -b feature/your-feature-name
-# 或
+# or
 git checkout -b fix/your-bug-fix
 ```
 
-3. **开发**
+3. **Development**
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 开发
+# Development
 npm run dev
 
-# 测试
+# Test
 npm test
 
-# 构建
+# Build
 npm run build
 ```
 
-4. **提交代码**
+4. **Commit Code**
 
 ```bash
 git add .
 git commit -m "feat: add new feature"
 ```
 
-提交信息格式：
-- `feat:` 新功能
-- `fix:` Bug 修复
-- `docs:` 文档更新
-- `style:` 代码格式（不影响功能）
-- `refactor:` 重构
-- `test:` 测试
-- `chore:` 构建/工具
+Commit message format:
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation update
+- `style:` Code formatting (doesn't affect functionality)
+- `refactor:` Refactoring
+- `test:` Testing
+- `chore:` Build/tooling
 
-5. **推送并创建 PR**
+5. **Push and Create PR**
 
 ```bash
 git push origin feature/your-feature-name
 ```
 
-然后在 GitHub 上创建 Pull Request。
+Then create a Pull Request on GitHub.
 
-### 代码规范
+### Code Standards
 
 #### TypeScript
 
-- 使用 TypeScript strict 模式
-- 所有公共 API 必须有类型定义
-- 避免使用 `any`
+- Use TypeScript strict mode
+- All public APIs must have type definitions
+- Avoid using `any`
 
-#### 代码风格
+#### Code Style
 
 ```typescript
-// ✓ 好
+// ✓ Good
 export async function processData(input: string): Promise<Result> {
   const validated = validateInput(input);
   return await performProcess(validated);
 }
 
-// ✗ 不好
+// ✗ Bad
 export async function processData(input: any) {
   return await performProcess(input);
 }
 ```
 
-#### 注释
+#### Comments
 
-为复杂逻辑添加注释：
+Add comments for complex logic:
 
 ```typescript
 /**
@@ -122,81 +122,81 @@ export async function processData(input: any) {
 async executeDebateRound(userQuery: string, round: number): Promise<DebateResult>
 ```
 
-#### 测试
+#### Testing
 
-- 所有新功能必须有测试
-- Bug 修复应该包含回归测试
-- 保持测试覆盖率 > 80%
+- All new features must have tests
+- Bug fixes should include regression tests
+- Maintain test coverage > 80%
 
 ```typescript
 describe('ThreeAgentCoordinator', () => {
   it('should rotate roles correctly', () => {
-    // 测试代码
+    // Test code
   });
 });
 ```
 
-## 开发指南
+## Development Guide
 
-### 项目结构
+### Project Structure
 
 ```
 src/
-├── agents/          # Agent 实现
-├── models/          # AI 模型客户端
-├── stages/          # 工作阶段
-├── ui/              # 用户界面
-├── types/           # 类型定义
-├── config.ts        # 配置
-├── index.ts         # 主入口
-└── cli.ts           # CLI 入口
+├── agents/          # Agent implementation
+├── models/          # AI model clients
+├── stages/          # Work stages
+├── ui/              # User interface
+├── types/           # Type definitions
+├── config.ts        # Configuration
+├── index.ts         # Main entry point
+└── cli.ts           # CLI entry point
 ```
 
-### 添加新的 AI 模型
+### Adding a New AI Model
 
-1. 在 `src/models/` 创建新的客户端类
-2. 实现 `AIModelClient` 接口
-3. 在 `ModelFactory` 注册
-4. 更新类型定义
-5. 添加文档和测试
+1. Create a new client class in `src/models/`
+2. Implement the `AIModelClient` interface
+3. Register in `ModelFactory`
+4. Update type definitions
+5. Add documentation and tests
 
-### 添加新的 Agent 角色
+### Adding a New Agent Role
 
-1. 在 `types/index.ts` 添加新角色
-2. 在 `agents/prompts.ts` 定义系统提示
-3. 更新 `ThreeAgentCoordinator`
-4. 添加测试
+1. Add new role in `types/index.ts`
+2. Define system prompts in `agents/prompts.ts`
+3. Update `ThreeAgentCoordinator`
+4. Add tests
 
-### 添加新的工作阶段
+### Adding a New Work Stage
 
-1. 在 `src/stages/` 创建新阶段类
-2. 实现核心逻辑
-3. 在 `DaoCodeApp` 集成
-4. 添加 CLI 命令
-5. 更新文档
+1. Create new stage class in `src/stages/`
+2. Implement core logic
+3. Integrate in `DaoCodeApp`
+4. Add CLI command
+5. Update documentation
 
-## 发布流程
+## Release Process
 
-维护者会处理版本发布，流程如下：
+Maintainers will handle version releases with the following process:
 
-1. 更新版本号（package.json）
-2. 更新 CHANGELOG
-3. 创建 Git tag
-4. 发布到 npm
+1. Update version number (package.json)
+2. Update CHANGELOG
+3. Create Git tag
+4. Publish to npm
 
-## 社区
+## Community
 
-- GitHub Discussions: 讨论想法
-- GitHub Issues: Bug 和功能请求
+- GitHub Discussions: Discuss ideas
+- GitHub Issues: Bugs and feature requests
 - Twitter: [@daocode](https://twitter.com/daocode)
 
-## 行为准则
+## Code of Conduct
 
-- 保持友善和专业
-- 尊重不同观点
-- 接受建设性批评
-- 关注最佳用户体验
+- Be friendly and professional
+- Respect different viewpoints
+- Accept constructive criticism
+- Focus on the best user experience
 
 ## License
 
-通过贡献代码，你同意你的贡献将采用 MIT License。
+By contributing code, you agree that your contributions will be licensed under the MIT License.

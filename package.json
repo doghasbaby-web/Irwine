@@ -1,7 +1,7 @@
 {
   "name": "dao-code",
   "version": "1.0.0",
-  "description": "道生三 - Three-Agent AI Coding Assistant inspired by Tao Te Ching",
+  "description": "Dao Sheng San - Three-Agent AI Coding Assistant inspired by Tao Te Ching",
   "main": "dist/index.js",
   "type": "module",
   "bin": {

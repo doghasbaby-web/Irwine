@@ -152,9 +152,9 @@ CUSTOM_PROVIDER_3_TYPE=openai-compatible
 
 1. **Configuration Loading**: The system loads all API keys and custom provider configurations from `.env`
 2. **Provider Assignment**: Available providers are automatically assigned to the three agents:
-   - Proposer (正方): Proposes solutions
-   - Challenger (反方): Challenges and critiques
-   - Judge (裁判): Analyzes and judges
+   - Proposer: Proposes solutions
+   - Challenger: Challenges and critiques
+   - Judge: Analyzes and judges
 3. **Model Selection**: Each provider uses its default model or a custom model specified in the configuration
 4. **Dynamic Rotation**: Providers can be rotated across roles using different strategies:
    - Sequential: Proposer → Challenger → Judge → Proposer

@@ -1,6 +1,6 @@
-# 架构设计
+# Architecture Design
 
-## 系统架构
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -46,11 +46,11 @@
 └───────────────────────────────────────────────────────┘
 ```
 
-## 核心组件
+## Core Components
 
-### 1. Agent 系统
+### 1. Agent System
 
-#### Agent 基类 (`Agent`)
+#### Agent Base Class (`Agent`)
 
 ```typescript
 class Agent {
@@ -65,12 +65,12 @@ class Agent {
 }
 ```
 
-**职责**：
-- 维护对话历史
-- 调用 AI 模型
-- 管理上下文
+**Responsibilities**:
+- Maintain conversation history
+- Call AI models
+- Manage context
 
-#### 三 Agent 协调器 (`ThreeAgentCoordinator`)
+#### Three-Agent Coordinator (`ThreeAgentCoordinator`)
 
 ```typescript
 class ThreeAgentCoordinator {
@@ -83,14 +83,14 @@ class ThreeAgentCoordinator {
 }
 ```
 
-**职责**：
-- 管理三个 Agent 的生命周期
-- 协调 Agent 之间的交互
-- 实现角色轮换机制
+**Responsibilities**:
+- Manage lifecycle of three Agents
+- Coordinate interactions between Agents
+- Implement role rotation mechanism
 
-### 2. 工作阶段
+### 2. Work Stages
 
-#### 需求澄清阶段 (`ClarificationStage`)
+#### Requirements Clarification Stage (`ClarificationStage`)
 
 ```typescript
 class ClarificationStage {
@@ -99,7 +99,7 @@ class ClarificationStage {
 }
 ```
 
-**工作流程**：
+**Workflow**:
 ```
 User Requirement
       ↓
@@ -112,7 +112,7 @@ Round N: Finalize → Challenge → Judge
 Extract Top 3 Proposals
 ```
 
-#### 编码协同阶段 (`CodingStage`)
+#### Coding Collaboration Stage (`CodingStage`)
 
 ```typescript
 class CodingStage {
@@ -122,7 +122,7 @@ class CodingStage {
 }
 ```
 
-**工作流程**：
+**Workflow**:
 ```
 Selected Proposal
       ↓
@@ -135,9 +135,9 @@ Iteration 2: Write → Review → Inspect
 Final Code
 ```
 
-### 3. 模型抽象层
+### 3. Model Abstraction Layer
 
-#### 基础客户端接口 (`AIModelClient`)
+#### Base Client Interface (`AIModelClient`)
 
 ```typescript
 interface AIModelClient {
@@ -147,37 +147,37 @@ interface AIModelClient {
 }
 ```
 
-#### 具体实现
+#### Concrete Implementations
 
-- **AnthropicClient**: Claude API 封装
-- **OpenAIClient**: ChatGPT API 封装
-- **GoogleClient**: Gemini API 封装
+- **AnthropicClient**: Claude API wrapper
+- **OpenAIClient**: ChatGPT API wrapper
+- **GoogleClient**: Gemini API wrapper
 
-**设计特点**：
-- 统一接口，易于扩展新模型
-- 支持流式和非流式响应
-- 错误处理和重试机制
+**Design Features**:
+- Unified interface, easy to extend with new models
+- Supports streaming and non-streaming responses
+- Error handling and retry mechanism
 
-### 4. CLI 层
+### 4. CLI Layer
 
-#### 命令结构
+#### Command Structure
 
 ```
 dao-code
-├── interactive (-i)    # 完整流程
-├── clarify (-c)        # 仅需求澄清
-├── code                # 仅编码协同
-└── menu (-m)           # 菜单模式
+├── interactive (-i)    # Complete workflow
+├── clarify (-c)        # Requirements clarification only
+├── code                # Coding collaboration only
+└── menu (-m)           # Menu mode
 ```
 
-#### 交互组件
+#### Interactive Components
 
-- **display.ts**: 美化输出（chalk）
-- **prompts.ts**: 用户输入（inquirer）
+- **display.ts**: Beautified output (chalk)
+- **prompts.ts**: User input (inquirer)
 
-## 数据流
+## Data Flow
 
-### 需求澄清流程
+### Requirements Clarification Flow
 
 ```
 ┌──────────┐
@@ -213,7 +213,7 @@ dao-code
 └──────────┘
 ```
 
-### 编码协同流程
+### Coding Collaboration Flow
 
 ```
 ┌──────────┐
@@ -246,24 +246,24 @@ dao-code
 └──────────┘
 ```
 
-## 设计模式
+## Design Patterns
 
-### 1. 策略模式 (Strategy Pattern)
+### 1. Strategy Pattern
 
-不同的 AI 模型客户端实现相同接口：
+Different AI model clients implement the same interface:
 
 ```typescript
 interface AIModelClient {
   generateResponse(messages): Promise<string>
 }
 
-// 三种策略
+// Three strategies
 class AnthropicClient implements AIModelClient { }
 class OpenAIClient implements AIModelClient { }
 class GoogleClient implements AIModelClient { }
 ```
 
-### 2. 工厂模式 (Factory Pattern)
+### 2. Factory Pattern
 
 ```typescript
 class ModelFactory {
@@ -277,53 +277,53 @@ class ModelFactory {
 }
 ```
 
-### 3. 协调器模式 (Coordinator Pattern)
+### 3. Coordinator Pattern
 
-`ThreeAgentCoordinator` 负责协调三个 Agent 的交互，避免 Agent 之间直接耦合。
+`ThreeAgentCoordinator` coordinates interactions between three Agents, avoiding direct coupling between Agents.
 
-### 4. 模板方法模式 (Template Method Pattern)
+### 4. Template Method Pattern
 
-`ClarificationStage` 和 `CodingStage` 定义了固定的工作流程，具体步骤由 Agent 实现。
+`ClarificationStage` and `CodingStage` define fixed workflows, with specific steps implemented by Agents.
 
-## 扩展性设计
+## Extensibility Design
 
-### 添加新的 AI 模型
+### Adding a New AI Model
 
-1. 实现 `AIModelClient` 接口
-2. 在 `ModelFactory` 中注册
-3. 更新配置和类型定义
+1. Implement the `AIModelClient` interface
+2. Register in `ModelFactory`
+3. Update configuration and type definitions
 
 ```typescript
-// 示例：添加 Llama 支持
+// Example: Adding Llama support
 class LlamaClient extends BaseModelClient {
   provider = ModelProvider.LLAMA
   async generateResponse(messages) { ... }
 }
 
-// 在 factory 中注册
+// Register in factory
 case ModelProvider.LLAMA:
   return new LlamaClient(apiKey, modelName)
 ```
 
-### 添加新的工作阶段
+### Adding a New Work Stage
 
-1. 创建新的 Stage 类
-2. 在 `DaoCodeApp` 中集成
-3. 添加 CLI 命令
+1. Create a new Stage class
+2. Integrate in `DaoCodeApp`
+3. Add CLI command
 
 ```typescript
 class TestingStage {
   constructor(coordinator: ThreeAgentCoordinator) {}
 
   async execute(code: string): Promise<TestResult> {
-    // Proposer: 生成测试用例
-    // Challenger: 找出未覆盖的边界情况
-    // Judge: 评估测试质量
+    // Proposer: Generate test cases
+    // Challenger: Find uncovered edge cases
+    // Judge: Evaluate test quality
   }
 }
 ```
 
-### 添加新的角色轮换策略
+### Adding a New Role Rotation Strategy
 
 ```typescript
 interface RotationStrategy {
@@ -332,38 +332,38 @@ interface RotationStrategy {
 
 class PerformanceBasedRotation implements RotationStrategy {
   rotate(currentAssignments) {
-    // 根据性能分数调整角色
+    // Adjust roles based on performance scores
   }
 }
 ```
 
-## 性能考虑
+## Performance Considerations
 
-### 1. 并发请求
+### 1. Concurrent Requests
 
-目前是串行调用 AI API，未来可以优化：
+Currently using serial AI API calls, can be optimized in the future:
 
 ```typescript
-// 当前
+// Current
 const proposerResponse = await proposer.think(...)
 const challengerResponse = await challenger.think(...)
 
-// 优化（某些场景）
+// Optimized (certain scenarios)
 const [proposerResponse, challengerResponse] = await Promise.all([
   proposer.think(...),
   challenger.think(...)
 ])
 ```
 
-### 2. 缓存机制
+### 2. Caching Mechanisms
 
-- 模型客户端缓存（已实现）
-- 对话历史持久化（待实现）
-- 方案库缓存（待实现）
+- Model client caching (implemented)
+- Conversation history persistence (to be implemented)
+- Solution library caching (to be implemented)
 
-### 3. 流式响应
+### 3. Streaming Response
 
-支持流式输出，提升用户体验：
+Support streaming output to improve user experience:
 
 ```typescript
 for await (const chunk of agent.thinkStream(message)) {
@@ -371,59 +371,59 @@ for await (const chunk of agent.thinkStream(message)) {
 }
 ```
 
-## 安全考虑
+## Security Considerations
 
-### 1. API Key 管理
+### 1. API Key Management
 
-- 使用环境变量存储
-- 不提交到版本控制
-- 支持多种配置方式
+- Store using environment variables
+- Do not commit to version control
+- Support multiple configuration methods
 
-### 2. 输入验证
+### 2. Input Validation
 
-- 验证用户输入
-- 防止注入攻击
-- 限制输入长度
+- Validate user input
+- Prevent injection attacks
+- Limit input length
 
-### 3. 错误处理
+### 3. Error Handling
 
-- 统一错误处理
-- 敏感信息脱敏
-- 优雅降级
+- Unified error handling
+- Sanitize sensitive information
+- Graceful degradation
 
-## 测试策略
+## Testing Strategy
 
-### 单元测试
+### Unit Testing
 
-- Agent 类
-- Model 客户端
-- 工具函数
+- Agent classes
+- Model clients
+- Utility functions
 
-### 集成测试
+### Integration Testing
 
-- Stage 流程
-- Coordinator 协调
-- CLI 命令
+- Stage workflows
+- Coordinator coordination
+- CLI commands
 
-### E2E 测试
+### E2E Testing
 
-- 完整工作流
-- 多模型组合
-- 错误场景
+- Complete workflows
+- Multi-model combinations
+- Error scenarios
 
-## 未来规划
+## Future Roadmap
 
 ### Phase 2
-- 持久化对话历史
-- 支持更多 AI 模型
-- 代码执行和验证
+- Persist conversation history
+- Support more AI models
+- Code execution and validation
 
 ### Phase 3
 - Web UI
-- VS Code 插件
-- 团队协作模式
+- VS Code extension
+- Team collaboration mode
 
 ### Phase 4
-- 自定义 Agent 角色
-- 可视化辩论过程
-- AI 性能分析
+- Custom Agent roles
+- Visualize debate process
+- AI performance analytics

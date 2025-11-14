@@ -21,13 +21,13 @@ const program = new Command();
 
 program
   .name('dao-code')
-  .description('道生三 - Three-Agent AI Coding Assistant')
+  .description('Dao Sheng San - Three-Agent AI Coding Assistant')
   .version('1.0.0');
 
 program
   .command('interactive')
   .alias('i')
-  .description('交互式模式（完整流程）')
+  .description('Interactive mode (complete workflow)')
   .action(async () => {
     try {
       displayBanner();
@@ -35,7 +35,7 @@ program
       const app = new DaoCodeApp();
 
       // Ask if user wants to customize model providers
-      const customize = await askConfirmation('是否自定义三个 Agent 的模型？（默认：Claude, GPT, Gemini）');
+      const customize = await askConfirmation('Customize models for the three Agents? (Default: Claude, GPT, Gemini)');
 
       if (customize) {
         const providers = await askModelProviders();
@@ -54,7 +54,7 @@ program
 program
   .command('clarify')
   .alias('c')
-  .description('仅运行需求澄清阶段（辩论模式）')
+  .description('Run requirements clarification stage only (debate mode)')
   .action(async () => {
     try {
       const app = new DaoCodeApp();
@@ -68,7 +68,7 @@ program
 
 program
   .command('code')
-  .description('仅运行编码协同阶段（需要先有方案）')
+  .description('Run coding collaboration stage only (requires existing solution)')
   .action(async () => {
     try {
       const app = new DaoCodeApp();
@@ -83,7 +83,7 @@ program
 program
   .command('menu')
   .alias('m')
-  .description('显示主菜单')
+  .description('Display main menu')
   .action(async () => {
     try {
       displayBanner();
@@ -108,15 +108,15 @@ program
             break;
           case 'exit':
             exit = true;
-            displayInfo('再见！');
+            displayInfo('Goodbye!');
             break;
         }
 
         if (!exit && action !== 'exit') {
-          const continueUsing = await askConfirmation('是否继续使用？');
+          const continueUsing = await askConfirmation('Continue using?');
           if (!continueUsing) {
             exit = true;
-            displayInfo('再见！');
+            displayInfo('Goodbye!');
           }
         }
       }
@@ -129,7 +129,7 @@ program
 program
   .command('sandbox')
   .alias('s')
-  .description('Docker 沙箱环境')
+  .description('Docker sandbox environment')
   .action(async () => {
     try {
       displayBanner();
