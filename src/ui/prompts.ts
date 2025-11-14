@@ -4,6 +4,7 @@
 
 import inquirer from 'inquirer';
 import { Proposal, ModelProvider } from '../types/index.js';
+import { DockerImage } from '../utils/docker.js';
 
 /**
  * Ask for user requirement
@@ -247,4 +248,113 @@ export async function askSelectSession(sessions: string[]): Promise<string> {
   ]);
 
   return session;
+}
+
+/**
+ * Ask user to select a sandbox image
+ */
+export async function askSandboxImage(images: DockerImage[]): Promise<DockerImage> {
+  const choices = images.map((img, index) => ({
+    name: `${img.name}:${img.tag}${img.isDefault ? ' (默认)' : ''} - ${img.description}`,
+    value: img
+  }));
+
+  const { selectedImage } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'selectedImage',
+      message: '选择沙箱镜像:',
+      choices,
+      default: images.find(img => img.isDefault)
+    }
+  ]);
+
+  return selectedImage;
+}
+
+/**
+ * Ask for sandbox action
+ */
+export async function askSandboxAction(): Promise<
+  'create' | 'execute' | 'command' | 'list' | 'stop' | 'remove' | 'cleanup' | 'exit'
+> {
+  const { action } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'action',
+      message: '请选择沙箱操作:',
+      choices: [
+        { name: '创建新沙箱', value: 'create' },
+        { name: '执行代码', value: 'execute' },
+        { name: '执行命令', value: 'command' },
+        { name: '列出所有沙箱', value: 'list' },
+        { name: '停止当前沙箱', value: 'stop' },
+        { name: '删除当前沙箱', value: 'remove' },
+        { name: '清理所有沙箱', value: 'cleanup' },
+        { name: '退出', value: 'exit' }
+      ]
+    }
+  ]);
+
+  return action;
+}
+
+/**
+ * Ask for code to execute
+ */
+export async function askCodeToExecute(): Promise<{ code: string; language: string }> {
+  const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'language',
+      message: '选择编程语言:',
+      choices: [
+        { name: 'JavaScript', value: 'javascript' },
+        { name: 'TypeScript', value: 'typescript' },
+        { name: 'Python', value: 'python' },
+        { name: 'Bash', value: 'bash' }
+      ],
+      default: 'javascript'
+    },
+    {
+      type: 'editor',
+      name: 'code',
+      message: '输入要执行的代码（将打开编辑器）:',
+      validate: (input: string) => input.trim().length > 0 || '代码不能为空'
+    }
+  ]);
+
+  return answers;
+}
+
+/**
+ * Ask for command to execute
+ */
+export async function askCommandToExecute(): Promise<string> {
+  const { command } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'command',
+      message: '输入要执行的命令:',
+      validate: (input: string) => input.trim().length > 0 || '命令不能为空'
+    }
+  ]);
+
+  return command;
+}
+
+/**
+ * Ask whether to use current directory as volume
+ */
+export async function askMountCurrentDirectory(): Promise<boolean> {
+  const { mount } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'mount',
+      message: '是否挂载当前目录到沙箱？',
+      default: true
+    }
+  ]);
+
+  return mount;
 }

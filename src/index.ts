@@ -5,6 +5,7 @@
 import { ThreeAgentCoordinator, createDefaultConfig } from './agents/coordinator.js';
 import { ClarificationStage } from './stages/clarification.js';
 import { CodingStage } from './stages/coding.js';
+import { SandboxStage } from './stages/sandbox.js';
 import { loadConfig, validateConfig } from './config.js';
 import { ModelProvider, ClarificationResult, Proposal } from './types/index.js';
 import {
@@ -24,7 +25,12 @@ import {
   askConfirmation,
   askManualProposal,
   askSessionAction,
-  askSelectSession
+  askSelectSession,
+  askSandboxAction,
+  askSandboxImage,
+  askCodeToExecute,
+  askCommandToExecute,
+  askMountCurrentDirectory
 } from './ui/prompts.js';
 import {
   saveClarificationResult,
@@ -38,6 +44,7 @@ export class DaoCodeApp {
   private coordinator: ThreeAgentCoordinator | null = null;
   private clarificationStage: ClarificationStage | null = null;
   private codingStage: CodingStage | null = null;
+  private sandboxStage: SandboxStage | null = null;
 
   /**
    * Initialize the application
@@ -250,9 +257,134 @@ export class DaoCodeApp {
     displaySpinner('启动三 Agent 编码协同...');
     await this.runCoding(proposal);
   }
+
+  /**
+   * Run sandbox mode
+   */
+  async runSandbox(): Promise<void> {
+    displayBanner();
+
+    // Initialize sandbox stage
+    if (!this.sandboxStage) {
+      this.sandboxStage = new SandboxStage();
+    }
+
+    // Check Docker availability
+    const dockerAvailable = await this.sandboxStage.initialize();
+    if (!dockerAvailable) {
+      return;
+    }
+
+    let exit = false;
+
+    while (!exit) {
+      const action = await askSandboxAction();
+
+      switch (action) {
+        case 'create': {
+          const images = this.sandboxStage.getAvailableImages();
+          const selectedImage = await askSandboxImage(images);
+
+          const mountCurrent = await askMountCurrentDirectory();
+          const volumes = mountCurrent
+            ? [{ host: process.cwd(), container: '/workspace' }]
+            : [];
+
+          const session = await this.sandboxStage.createSession(
+            selectedImage,
+            '/workspace',
+            volumes
+          );
+
+          if (session) {
+            displayInfo('沙箱环境已创建并启动');
+          }
+          break;
+        }
+
+        case 'execute': {
+          const currentSession = this.sandboxStage.getCurrentSession();
+          if (!currentSession) {
+            displayError(new Error('没有活动的沙箱会话。请先创建沙箱。'));
+            break;
+          }
+
+          const { code, language } = await askCodeToExecute();
+          await this.sandboxStage.executeCode(code, language);
+          break;
+        }
+
+        case 'command': {
+          const currentSession = this.sandboxStage.getCurrentSession();
+          if (!currentSession) {
+            displayError(new Error('没有活动的沙箱会话。请先创建沙箱。'));
+            break;
+          }
+
+          const command = await askCommandToExecute();
+          await this.sandboxStage.executeCommand(command);
+          break;
+        }
+
+        case 'list': {
+          await this.sandboxStage.listSandboxes();
+          break;
+        }
+
+        case 'stop': {
+          await this.sandboxStage.stopSession();
+          break;
+        }
+
+        case 'remove': {
+          await this.sandboxStage.removeSession();
+          break;
+        }
+
+        case 'cleanup': {
+          const confirm = await askConfirmation('确定要清理所有沙箱容器吗？');
+          if (confirm) {
+            await this.sandboxStage.cleanupAll();
+          }
+          break;
+        }
+
+        case 'exit': {
+          // Ask if user wants to stop current session before exiting
+          const currentSession = this.sandboxStage.getCurrentSession();
+          if (currentSession) {
+            const stopBeforeExit = await askConfirmation('是否停止当前沙箱会话？');
+            if (stopBeforeExit) {
+              await this.sandboxStage.stopSession();
+            }
+          }
+          exit = true;
+          displayInfo('再见！');
+          break;
+        }
+      }
+
+      if (!exit && action !== 'exit') {
+        const continueUsing = await askConfirmation('是否继续使用沙箱？');
+        if (!continueUsing) {
+          // Ask if user wants to stop current session before exiting
+          const currentSession = this.sandboxStage.getCurrentSession();
+          if (currentSession) {
+            const stopBeforeExit = await askConfirmation('是否停止当前沙箱会话？');
+            if (stopBeforeExit) {
+              await this.sandboxStage.stopSession();
+            }
+          }
+          exit = true;
+          displayInfo('再见！');
+        }
+      }
+    }
+  }
 }
 
 export * from './types/index.js';
 export * from './agents/coordinator.js';
 export * from './stages/clarification.js';
 export * from './stages/coding.js';
+export * from './stages/sandbox.js';

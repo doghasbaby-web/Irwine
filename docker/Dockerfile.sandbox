@@ -1,0 +1,85 @@
+# Default Dao Code Sandbox
+# Ubuntu 24.04 with Node.js and essential development tools
+
+FROM ubuntu:24.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set timezone
+ENV TZ=UTC
+
+# Update and install essential packages
+RUN apt-get update && apt-get install -y \
+    # Build essentials
+    build-essential \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    # Version control
+    git \
+    # Network tools
+    curl \
+    wget \
+    # Text editors
+    vim \
+    nano \
+    # Process management
+    procps \
+    # Archive tools
+    zip \
+    unzip \
+    tar \
+    # SSL/TLS
+    ca-certificates \
+    gnupg \
+    # Python (often needed for build tools)
+    python3 \
+    python3-pip \
+    # Additional utilities
+    jq \
+    tree \
+    htop \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20.x (LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install pnpm and yarn (alternative package managers)
+RUN npm install -g pnpm yarn
+
+# Install common development tools globally
+RUN npm install -g \
+    typescript \
+    ts-node \
+    tsx \
+    eslint \
+    prettier \
+    nodemon \
+    pm2
+
+# Create workspace directory
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# Set up default user (non-root for security)
+RUN useradd -m -s /bin/bash sandbox && \
+    chown -R sandbox:sandbox /workspace
+
+# Switch to non-root user
+USER sandbox
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PATH="/home/sandbox/.local/bin:${PATH}"
+
+# Default command
+CMD ["/bin/bash"]
+
+# Labels
+LABEL maintainer="Dao Code"
+LABEL description="Default sandbox environment for Dao Code with Ubuntu 24.04, Node.js 20, and development tools"
+LABEL version="1.0"
