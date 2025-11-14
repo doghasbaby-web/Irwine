@@ -1,0 +1,122 @@
+{
+  "name": "Form Interaction Test",
+  "description": "Tests form filling, input validation, and submission workflows",
+  "version": "1.0.0",
+  "baseUrl": "https://httpbin.org",
+  "config": {
+    "viewportWidth": 1920,
+    "viewportHeight": 1080,
+    "defaultWait": 500,
+    "screenshotOnError": true,
+    "stopOnError": true,
+    "timeout": 120000
+  },
+  "tags": ["form", "input", "validation"],
+  "setup": [
+    {
+      "step": 1,
+      "description": "Navigate to form test page",
+      "type": "navigate",
+      "input": {
+        "text": "https://httpbin.org/forms/post"
+      },
+      "waitAfter": 2000
+    }
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "Fill in customer name field",
+      "type": "type",
+      "selector": "input[name='custname']",
+      "input": {
+        "text": "John Doe"
+      },
+      "waitAfter": 500
+    },
+    {
+      "step": 2,
+      "description": "Fill in telephone number",
+      "type": "type",
+      "selector": "input[name='custtel']",
+      "input": {
+        "text": "555-1234"
+      },
+      "waitAfter": 500
+    },
+    {
+      "step": 3,
+      "description": "Fill in email address",
+      "type": "type",
+      "selector": "input[name='custemail']",
+      "input": {
+        "text": "john.doe@example.com"
+      },
+      "waitAfter": 500
+    },
+    {
+      "step": 4,
+      "description": "Select pizza size - small",
+      "type": "click",
+      "selector": "input[value='small']",
+      "waitAfter": 500
+    },
+    {
+      "step": 5,
+      "description": "Select topping - bacon",
+      "type": "click",
+      "selector": "input[value='bacon']",
+      "waitAfter": 300
+    },
+    {
+      "step": 6,
+      "description": "Select topping - cheese",
+      "type": "click",
+      "selector": "input[value='cheese']",
+      "waitAfter": 300
+    },
+    {
+      "step": 7,
+      "description": "Take screenshot of filled form",
+      "type": "screenshot",
+      "screenshotName": "form-filled.png"
+    },
+    {
+      "step": 8,
+      "description": "Submit the form",
+      "type": "click",
+      "selector": "button[type='submit']",
+      "waitAfter": 3000,
+      "retryCount": 2
+    },
+    {
+      "step": 9,
+      "description": "Wait for response page to load",
+      "type": "wait",
+      "input": {
+        "number": 2000
+      }
+    },
+    {
+      "step": 10,
+      "description": "Take screenshot of result",
+      "type": "screenshot",
+      "screenshotName": "form-result.png"
+    },
+    {
+      "step": 11,
+      "description": "Verify submission was successful",
+      "type": "verify",
+      "selector": "pre",
+      "expected": "john.doe@example.com"
+    }
+  ],
+  "cleanup": [
+    {
+      "step": 1,
+      "description": "Take final screenshot",
+      "type": "screenshot",
+      "screenshotName": "test-complete.png"
+    }
+  ]
+}
