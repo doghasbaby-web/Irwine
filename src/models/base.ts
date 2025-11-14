@@ -6,7 +6,7 @@ import { AIModelClient, Message, ModelProvider } from '../types/index.js';
 import { retryWithBackoff, isRetryableError } from '../utils/retry.js';
 
 export abstract class BaseModelClient implements AIModelClient {
-  abstract provider: ModelProvider;
+  abstract provider: ModelProvider | string;
 
   protected apiKey: string;
   protected modelName: string;
