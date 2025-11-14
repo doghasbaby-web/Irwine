@@ -96,6 +96,98 @@ export interface AIModelClient {
   streamResponse?(messages: Message[], config?: any): AsyncGenerator<string>;
 }
 
+/**
+ * OpenAI Codex-specific types and interfaces
+ */
+
+// Code Completion with suffix/prefix support
+export interface CodeCompletionRequest {
+  prompt: string;           // Code before cursor (prefix)
+  suffix?: string;          // Code after cursor
+  language?: string;        // Programming language hint
+  maxTokens?: number;
+  temperature?: number;
+  stopSequences?: string[];
+}
+
+export interface CodeCompletionResponse {
+  completion: string;
+  finishReason: 'stop' | 'length' | 'content_filter';
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+// Code Explanation
+export interface CodeExplanationRequest {
+  code: string;
+  language?: string;
+  detailLevel?: 'brief' | 'detailed' | 'expert';
+  focusAreas?: string[];    // Specific aspects to explain (e.g., 'performance', 'security')
+}
+
+export interface CodeExplanationResponse {
+  explanation: string;
+  keyPoints: string[];
+  complexity: string;
+  suggestions?: string[];
+}
+
+// Code Embeddings for semantic search
+export interface CodeEmbeddingRequest {
+  code: string;
+  language?: string;
+  normalize?: boolean;      // Normalize embeddings to unit length
+}
+
+export interface CodeEmbeddingResponse {
+  embedding: number[];
+  dimensions: number;
+  model: string;
+}
+
+// Code Review and Bug Detection
+export interface CodeReviewRequest {
+  code: string;
+  language?: string;
+  reviewType?: 'security' | 'performance' | 'style' | 'comprehensive';
+  severity?: 'all' | 'critical' | 'high' | 'medium';
+}
+
+export interface CodeReviewResponse {
+  overallAssessment: string;
+  issues: CodeIssue[];
+  suggestions: string[];
+  score?: number;           // Quality score 0-100
+}
+
+export interface CodeIssue {
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  category: 'security' | 'performance' | 'style' | 'logic' | 'maintainability';
+  message: string;
+  line?: number;
+  column?: number;
+  snippet?: string;
+  fix?: string;             // Suggested fix
+}
+
+// Code Editing with Insert
+export interface CodeInsertRequest {
+  prefix: string;           // Code before insertion point
+  suffix: string;           // Code after insertion point
+  instruction?: string;     // What to insert/generate
+  language?: string;
+  maxTokens?: number;
+}
+
+export interface CodeInsertResponse {
+  insertedCode: string;
+  fullCode: string;         // prefix + inserted + suffix
+  explanation?: string;
+}
+
 export interface ThreeAgentConfig {
   enableDebateMode: boolean;
   debateRounds: number;
