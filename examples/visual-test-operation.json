@@ -1,0 +1,92 @@
+{
+  "name": "Example Visual Test",
+  "description": "Demonstrates various visual test operations including navigation, input, and verification",
+  "version": "1.0.0",
+  "baseUrl": "https://example.com",
+  "config": {
+    "viewportWidth": 1280,
+    "viewportHeight": 720,
+    "defaultWait": 1000,
+    "screenshotOnError": true,
+    "stopOnError": false,
+    "timeout": 60000
+  },
+  "tags": ["example", "demo", "visual-test"],
+  "metadata": {
+    "author": "Visual Test System",
+    "created": "2025-11-14",
+    "purpose": "Demonstration of operation file capabilities"
+  },
+  "setup": [
+    {
+      "step": 1,
+      "description": "Navigate to the test page",
+      "type": "navigate",
+      "input": {
+        "text": "https://example.com"
+      },
+      "waitAfter": 2000
+    },
+    {
+      "step": 2,
+      "description": "Take initial screenshot",
+      "type": "screenshot",
+      "screenshotName": "00-initial-page.png"
+    }
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "Verify page title is present",
+      "type": "verify",
+      "selector": "h1",
+      "expected": "Example Domain",
+      "waitAfter": 500
+    },
+    {
+      "step": 2,
+      "description": "Click on the 'More information' link",
+      "type": "click",
+      "selector": "a[href*='iana.org']",
+      "waitAfter": 2000,
+      "retryCount": 3
+    },
+    {
+      "step": 3,
+      "description": "Wait for page to load",
+      "type": "wait",
+      "input": {
+        "number": 3000
+      }
+    },
+    {
+      "step": 4,
+      "description": "Take screenshot after navigation",
+      "type": "screenshot",
+      "screenshotName": "01-after-click.png"
+    },
+    {
+      "step": 5,
+      "description": "Scroll down the page",
+      "type": "scroll",
+      "input": {
+        "number": 500
+      },
+      "waitAfter": 1000
+    },
+    {
+      "step": 6,
+      "description": "Take screenshot after scroll",
+      "type": "screenshot",
+      "screenshotName": "02-after-scroll.png"
+    }
+  ],
+  "cleanup": [
+    {
+      "step": 1,
+      "description": "Take final screenshot",
+      "type": "screenshot",
+      "screenshotName": "99-final-state.png"
+    }
+  ]
+}

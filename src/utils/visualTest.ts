@@ -1,6 +1,17 @@
 import { chromium, Browser, Page } from 'playwright';
-import { displayInfo, displaySuccess, displayError, displaySection } from '../ui/display.js';
+import { displayInfo, displaySuccess, displayError, displaySection, displayWarning } from '../ui/display.js';
 import ora from 'ora';
+import type { OperationFile, Operation, TestExecutionResult, OperationResult } from '../types/operation.js';
+import {
+  loadOperationFile,
+  getAllOperations,
+  getOperationFileSummary,
+  createTestExecutionResult,
+  addOperationResult,
+  finalizeTestExecutionResult,
+  exportTestResult
+} from './operationLoader.js';
+import { writeFile } from 'fs/promises';
 
 export interface VisualTestConfig {
   headless?: boolean;
@@ -156,6 +167,287 @@ export class VisualTester {
       displayError(error as Error);
       return false;
     }
+  }
+
+  /**
+   * Run test from an operation file
+   */
+  async runOperationFile(filePath: string): Promise<TestExecutionResult | null> {
+    if (!this.page || !this.browser) {
+      displayError(new Error('Browser not initialized. Call initialize() first.'));
+      return null;
+    }
+
+    // Load operation file
+    const operationFile = await loadOperationFile(filePath);
+    if (!operationFile) {
+      return null;
+    }
+
+    // Display operation file summary
+    displaySection('Operation File Summary');
+    displayInfo(getOperationFileSummary(operationFile));
+
+    // Apply config from operation file if present
+    if (operationFile.config) {
+      if (operationFile.config.viewportWidth && operationFile.config.viewportHeight) {
+        await this.page.setViewportSize({
+          width: operationFile.config.viewportWidth,
+          height: operationFile.config.viewportHeight
+        });
+        displayInfo(
+          `Viewport set to ${operationFile.config.viewportWidth}x${operationFile.config.viewportHeight}`
+        );
+      }
+
+      if (operationFile.config.defaultWait) {
+        this.config.stepDelay = operationFile.config.defaultWait;
+        displayInfo(`Default wait time set to ${operationFile.config.defaultWait}ms`);
+      }
+    }
+
+    // Create test execution result
+    const testResult = createTestExecutionResult(operationFile.name);
+    displaySection(`Starting Test: ${operationFile.name}`);
+
+    try {
+      // Get all operations (setup, main, cleanup)
+      const allOps = getAllOperations(operationFile);
+
+      // Execute all operations
+      for (const { phase, operation } of allOps) {
+        const phaseLabel = phase === 'setup' ? '[SETUP]' : phase === 'cleanup' ? '[CLEANUP]' : '';
+        const description = `${phaseLabel} Step ${operation.step}: ${operation.description}`;
+
+        displayInfo(`\n${description}`);
+
+        const operationResult = await this.executeOperation(
+          operation,
+          operationFile,
+          operationFile.config?.screenshotOnError || false
+        );
+
+        addOperationResult(testResult, operationResult);
+
+        if (!operationResult.success) {
+          displayError(new Error(`Operation failed: ${operationResult.error}`));
+
+          if (operationFile.config?.stopOnError) {
+            displayWarning('Stopping test due to error (stopOnError = true)');
+            break;
+          }
+        }
+
+        // Apply custom wait time if specified, otherwise use default
+        const waitTime = operation.waitAfter ?? this.config.stepDelay ?? 0;
+        if (waitTime > 0) {
+          await this.sleep(waitTime);
+        }
+      }
+
+      // Finalize results
+      finalizeTestExecutionResult(testResult);
+
+      // Display summary
+      displaySection('Test Execution Summary');
+      displayInfo(`Total Operations: ${testResult.totalOperations}`);
+      displayInfo(`Successful: ${testResult.successfulOperations}`);
+      displayInfo(`Failed: ${testResult.failedOperations}`);
+      displayInfo(`Skipped: ${testResult.skippedOperations}`);
+      displayInfo(`Duration: ${testResult.duration}ms`);
+
+      if (testResult.success) {
+        displaySuccess('All operations completed successfully!');
+      } else {
+        displayError(new Error(testResult.errorSummary || 'Test failed'));
+      }
+
+      // Save test results to file
+      const resultFilePath = `test-result-${Date.now()}.json`;
+      await writeFile(resultFilePath, exportTestResult(testResult));
+      displayInfo(`Test results saved to: ${resultFilePath}`);
+
+      return testResult;
+    } catch (error) {
+      displayError(error as Error);
+      finalizeTestExecutionResult(testResult);
+      testResult.success = false;
+      testResult.errorSummary = (error as Error).message;
+      return testResult;
+    }
+  }
+
+  /**
+   * Execute a single operation from the operation file
+   */
+  private async executeOperation(
+    operation: Operation,
+    operationFile: OperationFile,
+    screenshotOnError: boolean
+  ): Promise<OperationResult> {
+    const startTime = Date.now();
+    const result: OperationResult = {
+      step: operation.step,
+      success: false,
+      duration: 0
+    };
+
+    const spinner = ora('Executing...').start();
+
+    try {
+      switch (operation.type) {
+        case 'navigate': {
+          const url = operation.input?.text || operationFile.baseUrl || '';
+          await this.page!.goto(url, { waitUntil: 'domcontentloaded' });
+          displayInfo(`Navigated to: ${url}`);
+          break;
+        }
+
+        case 'click': {
+          if (!operation.selector) {
+            throw new Error('Click operation requires a selector');
+          }
+          await this.page!.click(operation.selector);
+          displayInfo(`Clicked: ${operation.selector}`);
+          break;
+        }
+
+        case 'type': {
+          if (!operation.selector) {
+            throw new Error('Type operation requires a selector');
+          }
+          const text = operation.input?.text || '';
+          await this.page!.fill(operation.selector, text);
+          displayInfo(`Typed "${text}" into: ${operation.selector}`);
+          break;
+        }
+
+        case 'clear': {
+          if (!operation.selector) {
+            throw new Error('Clear operation requires a selector');
+          }
+          await this.page!.fill(operation.selector, '');
+          displayInfo(`Cleared: ${operation.selector}`);
+          break;
+        }
+
+        case 'select': {
+          if (!operation.selector) {
+            throw new Error('Select operation requires a selector');
+          }
+          const value = operation.input?.text || '';
+          await this.page!.selectOption(operation.selector, value);
+          displayInfo(`Selected "${value}" in: ${operation.selector}`);
+          break;
+        }
+
+        case 'wait': {
+          const waitTime = operation.input?.number || 1000;
+          await this.sleep(waitTime);
+          displayInfo(`Waited for ${waitTime}ms`);
+          break;
+        }
+
+        case 'screenshot': {
+          const filename = operation.screenshotName || `screenshot-step-${operation.step}.png`;
+          await this.page!.screenshot({ path: filename });
+          result.screenshot = filename;
+          displayInfo(`Screenshot saved: ${filename}`);
+          break;
+        }
+
+        case 'scroll': {
+          const distance = operation.input?.number || 0;
+          await this.page!.evaluate((dist) => {
+            window.scrollBy(0, dist);
+          }, distance);
+          displayInfo(`Scrolled ${distance}px`);
+          break;
+        }
+
+        case 'hover': {
+          if (!operation.selector) {
+            throw new Error('Hover operation requires a selector');
+          }
+          await this.page!.hover(operation.selector);
+          displayInfo(`Hovered over: ${operation.selector}`);
+          break;
+        }
+
+        case 'verify': {
+          if (!operation.selector) {
+            throw new Error('Verify operation requires a selector');
+          }
+          const element = await this.page!.$(operation.selector);
+          if (!element) {
+            throw new Error(`Element not found: ${operation.selector}`);
+          }
+
+          if (operation.expected) {
+            const text = await element.textContent();
+            if (!text?.includes(operation.expected)) {
+              throw new Error(
+                `Verification failed: expected "${operation.expected}" but got "${text}"`
+              );
+            }
+            displayInfo(`Verified: ${operation.selector} contains "${operation.expected}"`);
+          } else {
+            displayInfo(`Verified: ${operation.selector} exists`);
+          }
+          break;
+        }
+
+        case 'press': {
+          const key = operation.input?.text || '';
+          await this.page!.keyboard.press(key);
+          displayInfo(`Pressed key: ${key}`);
+          break;
+        }
+
+        case 'upload': {
+          if (!operation.selector) {
+            throw new Error('Upload operation requires a selector');
+          }
+          const filePath = operation.input?.text || '';
+          await this.page!.setInputFiles(operation.selector, filePath);
+          displayInfo(`Uploaded file: ${filePath} to ${operation.selector}`);
+          break;
+        }
+
+        default:
+          throw new Error(`Unknown operation type: ${operation.type}`);
+      }
+
+      result.success = true;
+      spinner.succeed('Complete');
+    } catch (error) {
+      result.success = false;
+      result.error = (error as Error).message;
+      spinner.fail('Failed');
+
+      // Take screenshot on error if configured
+      if (screenshotOnError) {
+        const errorScreenshot = `error-step-${operation.step}-${Date.now()}.png`;
+        try {
+          await this.page!.screenshot({ path: errorScreenshot });
+          result.screenshot = errorScreenshot;
+          displayInfo(`Error screenshot saved: ${errorScreenshot}`);
+        } catch (screenshotError) {
+          displayWarning(`Failed to take error screenshot: ${(screenshotError as Error).message}`);
+        }
+      }
+
+      // Handle retry logic
+      if (operation.retryCount && operation.retryCount > 0) {
+        displayWarning(`Retrying operation (${operation.retryCount} attempts remaining)...`);
+        const retryOperation = { ...operation, retryCount: operation.retryCount - 1 };
+        return this.executeOperation(retryOperation, operationFile, screenshotOnError);
+      }
+    } finally {
+      result.duration = Date.now() - startTime;
+    }
+
+    return result;
   }
 
   /**
