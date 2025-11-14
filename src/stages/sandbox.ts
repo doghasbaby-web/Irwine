@@ -1,5 +1,6 @@
 import { DockerManager, DockerImage, DEFAULT_IMAGES, SandboxConfig } from '../utils/docker.js';
 import { displayInfo, displaySuccess, displayError, displaySection } from '../ui/display.js';
+import { VisualTester } from '../utils/visualTest.js';
 import ora from 'ora';
 
 export interface SandboxSession {
@@ -12,6 +13,7 @@ export interface SandboxSession {
 export class SandboxStage {
   private dockerManager: DockerManager;
   private currentSession: SandboxSession | null = null;
+  private visualTester: VisualTester | null = null;
 
   constructor() {
     this.dockerManager = new DockerManager();
@@ -143,6 +145,11 @@ export class SandboxStage {
 
       displayInfo(`容器名称: ${containerName}`);
       displayInfo(`镜像: ${fullImageName}`);
+
+      // Run visual test if enabled
+      if (VisualTester.isEnabled()) {
+        await this.runVisualTest();
+      }
 
       return this.currentSession;
     } catch (error) {
@@ -364,5 +371,61 @@ export class SandboxStage {
    */
   getAvailableImages(): DockerImage[] {
     return DEFAULT_IMAGES;
+  }
+
+  /**
+   * Run visual test in Chrome browser
+   */
+  async runVisualTest(): Promise<void> {
+    displaySection('启动可视化浏览器测试');
+    displayInfo('VISUAL_TEST 已启用，将运行 Chrome 浏览器演示测试');
+
+    this.visualTester = new VisualTester({
+      headless: false,
+      slowMo: 500,
+      stepDelay: 2000,
+    });
+
+    const initialized = await this.visualTester.initialize();
+    if (!initialized) {
+      displayError(new Error('Failed to initialize visual tester'));
+      return;
+    }
+
+    await this.visualTester.runDemoTest();
+    await this.visualTester.close();
+
+    this.visualTester = null;
+  }
+
+  /**
+   * Run custom visual test with specific URL
+   */
+  async runCustomVisualTest(url: string): Promise<void> {
+    if (!this.visualTester) {
+      this.visualTester = new VisualTester({
+        headless: false,
+        slowMo: 500,
+        stepDelay: 2000,
+      });
+
+      const initialized = await this.visualTester.initialize();
+      if (!initialized) {
+        displayError(new Error('Failed to initialize visual tester'));
+        return;
+      }
+    }
+
+    await this.visualTester.runCustomTest(url);
+  }
+
+  /**
+   * Close visual tester if running
+   */
+  async closeVisualTester(): Promise<void> {
+    if (this.visualTester) {
+      await this.visualTester.close();
+      this.visualTester = null;
+    }
   }
 }

@@ -152,6 +152,77 @@ npm run build
 npm test
 ```
 
+## 可视化测试功能
+
+道生三支持可视化浏览器测试，用于在沙箱环境中演示和调试 Web 应用。
+
+### 启用可视化测试
+
+在 `.env` 文件中设置：
+
+```bash
+VISUAL_TEST=Yes
+```
+
+### 功能特性
+
+当启用可视化测试时，沙箱启动后会自动：
+
+1. 启动 Chrome 浏览器（可见模式）
+2. 逐步执行测试步骤
+3. 每个步骤之间有 2 秒延迟，便于观察
+4. 自动截图保存测试过程
+5. 显示详细的测试日志
+
+### 测试步骤
+
+默认演示测试包含以下步骤：
+
+1. 导航到示例网页
+2. 截图保存当前页面
+3. 获取页面标题
+4. 查找页面元素
+5. 执行 JavaScript 代码
+6. 保存最终截图
+
+### 依赖要求
+
+可视化测试功能使用 Playwright，需要：
+
+- Node.js >= 18.0.0
+- Playwright 浏览器（自动安装）
+
+首次使用时，运行以下命令安装浏览器：
+
+```bash
+npx playwright install chromium
+```
+
+### 自定义测试
+
+你也可以在代码中使用 `VisualTester` 类创建自定义测试：
+
+```typescript
+import { VisualTester } from './utils/visualTest.js';
+
+const tester = new VisualTester({
+  headless: false,
+  slowMo: 500,
+  stepDelay: 2000,
+});
+
+await tester.initialize();
+await tester.runCustomTest('https://your-app.com');
+await tester.close();
+```
+
+### 注意事项
+
+- 可视化测试会打开真实的浏览器窗口
+- 测试过程中请勿最小化或关闭浏览器窗口
+- 截图文件会保存在项目根目录
+- 如不需要可视化测试，保持 `VISUAL_TEST=No` 即可
+
 ## License
 
 MIT
