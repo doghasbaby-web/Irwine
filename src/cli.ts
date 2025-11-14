@@ -126,6 +126,22 @@ program
     }
   });
 
+program
+  .command('sandbox')
+  .alias('s')
+  .description('Docker 沙箱环境')
+  .action(async () => {
+    try {
+      displayBanner();
+
+      const app = new DaoCodeApp();
+      await app.runSandbox();
+    } catch (error) {
+      displayError(error as Error);
+      process.exit(1);
+    }
+  });
+
 // Default action (no command)
 program.action(async () => {
   try {
