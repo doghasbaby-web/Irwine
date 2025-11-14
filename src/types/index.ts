@@ -17,7 +17,21 @@ export enum WorkStage {
 export enum ModelProvider {
   ANTHROPIC = 'anthropic',
   OPENAI = 'openai',
-  GOOGLE = 'google'
+  GOOGLE = 'google',
+  DEEPSEEK = 'deepseek',
+  QWEN = 'qwen',
+  CUSTOM = 'custom'
+}
+
+/**
+ * Custom provider configuration for OpenAI-compatible APIs
+ */
+export interface CustomProviderConfig {
+  name: string;           // Display name (e.g., 'DeepSeek', 'Qwen', 'Local LLM')
+  apiKey: string;         // API key for authentication
+  baseURL: string;        // Base URL for the API (e.g., 'https://api.deepseek.com/v1')
+  modelName: string;      // Model name to use (e.g., 'deepseek-chat', 'qwen-turbo')
+  type?: 'openai-compatible' | 'anthropic-compatible' | 'google-compatible';
 }
 
 export interface Message {
@@ -25,16 +39,17 @@ export interface Message {
   content: string;
   metadata?: {
     agentRole?: AgentRole;
-    modelProvider?: ModelProvider;
+    modelProvider?: ModelProvider | string;  // Allow custom provider names
     timestamp?: number;
   };
 }
 
 export interface AgentConfig {
   role: AgentRole;
-  modelProvider: ModelProvider;
+  modelProvider: ModelProvider | string;  // Allow custom provider names
   modelName: string;
   systemPrompt: string;
+  customConfig?: CustomProviderConfig;    // Custom provider configuration
 }
 
 export interface DebateRound {
@@ -91,7 +106,7 @@ export interface Issue {
 }
 
 export interface AIModelClient {
-  provider: ModelProvider;
+  provider: ModelProvider | string;  // Allow custom provider names
   generateResponse(messages: Message[], config?: any): Promise<string>;
   streamResponse?(messages: Message[], config?: any): AsyncGenerator<string>;
 }

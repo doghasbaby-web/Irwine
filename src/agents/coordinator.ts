@@ -4,7 +4,7 @@
  */
 
 import { Agent } from './base.js';
-import { AgentRole, AgentConfig, ThreeAgentConfig, Message, ModelProvider } from '../types/index.js';
+import { AgentRole, AgentConfig, ThreeAgentConfig, Message, ModelProvider, CustomProviderConfig } from '../types/index.js';
 import { AGENT_PROMPTS } from './prompts.js';
 
 export class ThreeAgentCoordinator {
@@ -14,17 +14,29 @@ export class ThreeAgentCoordinator {
     anthropic?: string;
     openai?: string;
     google?: string;
+    deepseek?: string;
+    qwen?: string;
+    [key: string]: string | undefined;  // Allow custom provider keys
   };
-  private performanceMetrics: Map<ModelProvider, {
+  private customProviders: Map<string, CustomProviderConfig> = new Map();
+  private performanceMetrics: Map<ModelProvider | string, {
     successCount: number;
     failureCount: number;
     avgResponseTime: number;
     totalIterations: number;
   }> = new Map();
 
-  constructor(config: ThreeAgentConfig, apiKeys: any) {
+  constructor(config: ThreeAgentConfig, apiKeys: any, customProviders?: CustomProviderConfig[]) {
     this.config = config;
     this.apiKeys = apiKeys;
+
+    // Store custom providers
+    if (customProviders) {
+      for (const provider of customProviders) {
+        this.customProviders.set(provider.name, provider);
+      }
+    }
+
     this.initializeAgents();
     this.initializePerformanceMetrics();
   }
@@ -33,9 +45,26 @@ export class ThreeAgentCoordinator {
    * Initialize performance metrics for all providers
    */
   private initializePerformanceMetrics(): void {
-    const providers = [ModelProvider.ANTHROPIC, ModelProvider.OPENAI, ModelProvider.GOOGLE];
+    const providers = [
+      ModelProvider.ANTHROPIC,
+      ModelProvider.OPENAI,
+      ModelProvider.GOOGLE,
+      ModelProvider.DEEPSEEK,
+      ModelProvider.QWEN
+    ];
+
     for (const provider of providers) {
       this.performanceMetrics.set(provider, {
+        successCount: 0,
+        failureCount: 0,
+        avgResponseTime: 0,
+        totalIterations: 0
+      });
+    }
+
+    // Initialize metrics for custom providers
+    for (const [name, _] of this.customProviders) {
+      this.performanceMetrics.set(name, {
         successCount: 0,
         failureCount: 0,
         avgResponseTime: 0,
@@ -66,7 +95,14 @@ export class ThreeAgentCoordinator {
   /**
    * Get API key for a specific provider
    */
-  private getApiKeyForProvider(provider: ModelProvider): string | undefined {
+  private getApiKeyForProvider(provider: ModelProvider | string): string | undefined {
+    // Check if it's a custom provider
+    const customProvider = this.customProviders.get(provider);
+    if (customProvider) {
+      return customProvider.apiKey;
+    }
+
+    // Handle built-in providers
     switch (provider) {
       case ModelProvider.ANTHROPIC:
         return this.apiKeys.anthropic;
@@ -74,9 +110,20 @@ export class ThreeAgentCoordinator {
         return this.apiKeys.openai;
       case ModelProvider.GOOGLE:
         return this.apiKeys.google;
+      case ModelProvider.DEEPSEEK:
+        return this.apiKeys.deepseek;
+      case ModelProvider.QWEN:
+        return this.apiKeys.qwen;
       default:
         return undefined;
     }
+  }
+
+  /**
+   * Get custom provider configuration if applicable
+   */
+  private getCustomProviderConfig(provider: ModelProvider | string): CustomProviderConfig | undefined {
+    return this.customProviders.get(provider);
   }
 
   /**
@@ -240,7 +287,14 @@ export class ThreeAgentCoordinator {
   /**
    * Get default model name for a provider
    */
-  private getDefaultModelName(provider: ModelProvider): string {
+  private getDefaultModelName(provider: ModelProvider | string): string {
+    // Check if it's a custom provider
+    const customProvider = this.customProviders.get(provider);
+    if (customProvider) {
+      return customProvider.modelName;
+    }
+
+    // Handle built-in providers
     switch (provider) {
       case ModelProvider.ANTHROPIC:
         return 'claude-sonnet-4-5-20250929';
@@ -248,35 +302,49 @@ export class ThreeAgentCoordinator {
         return 'gpt-4-turbo';
       case ModelProvider.GOOGLE:
         return 'gemini-2.0-flash-exp';
+      case ModelProvider.DEEPSEEK:
+        return 'deepseek-chat';
+      case ModelProvider.QWEN:
+        return 'qwen-turbo';
       default:
-        throw new Error(`Unknown provider: ${provider}`);
+        return 'default';
     }
   }
 
   /**
    * Record performance metrics after an iteration
    */
-  recordPerformance(provider: ModelProvider, success: boolean, responseTime: number): void {
+  recordPerformance(provider: ModelProvider | string, success: boolean, responseTime: number): void {
     const metrics = this.performanceMetrics.get(provider);
-    if (!metrics) return;
-
-    if (success) {
-      metrics.successCount++;
-    } else {
-      metrics.failureCount++;
+    if (!metrics) {
+      // Initialize if not found
+      this.performanceMetrics.set(provider, {
+        successCount: 0,
+        failureCount: 0,
+        avgResponseTime: 0,
+        totalIterations: 0
+      });
     }
 
-    metrics.totalIterations++;
-    metrics.avgResponseTime =
-      (metrics.avgResponseTime * (metrics.totalIterations - 1) + responseTime) / metrics.totalIterations;
+    const updatedMetrics = this.performanceMetrics.get(provider)!;
 
-    this.performanceMetrics.set(provider, metrics);
+    if (success) {
+      updatedMetrics.successCount++;
+    } else {
+      updatedMetrics.failureCount++;
+    }
+
+    updatedMetrics.totalIterations++;
+    updatedMetrics.avgResponseTime =
+      (updatedMetrics.avgResponseTime * (updatedMetrics.totalIterations - 1) + responseTime) / updatedMetrics.totalIterations;
+
+    this.performanceMetrics.set(provider, updatedMetrics);
   }
 
   /**
    * Get performance metrics for all providers
    */
-  getPerformanceMetrics(): Map<ModelProvider, {
+  getPerformanceMetrics(): Map<ModelProvider | string, {
     successCount: number;
     failureCount: number;
     avgResponseTime: number;
@@ -297,7 +365,7 @@ export class ThreeAgentCoordinator {
   /**
    * Get current role assignments
    */
-  getRoleAssignments(): { role: AgentRole; provider: ModelProvider }[] {
+  getRoleAssignments(): { role: AgentRole; provider: ModelProvider | string }[] {
     return Array.from(this.agents.entries()).map(([role, agent]) => ({
       role,
       provider: agent.config.modelProvider
@@ -421,14 +489,15 @@ export class ThreeAgentCoordinator {
  */
 export function createDefaultConfig(
   providers: {
-    proposer: ModelProvider;
-    challenger: ModelProvider;
-    judge: ModelProvider;
+    proposer: ModelProvider | string;
+    challenger: ModelProvider | string;
+    judge: ModelProvider | string;
   } = {
     proposer: ModelProvider.ANTHROPIC,
     challenger: ModelProvider.OPENAI,
     judge: ModelProvider.GOOGLE
-  }
+  },
+  customProviders?: Map<string, CustomProviderConfig>
 ): ThreeAgentConfig {
   return {
     enableDebateMode: true,
@@ -438,26 +507,36 @@ export function createDefaultConfig(
       [AgentRole.PROPOSER]: {
         role: AgentRole.PROPOSER,
         modelProvider: providers.proposer,
-        modelName: getDefaultModelName(providers.proposer),
-        systemPrompt: AGENT_PROMPTS[AgentRole.PROPOSER]
+        modelName: getDefaultModelName(providers.proposer, customProviders),
+        systemPrompt: AGENT_PROMPTS[AgentRole.PROPOSER],
+        customConfig: customProviders?.get(providers.proposer)
       },
       [AgentRole.CHALLENGER]: {
         role: AgentRole.CHALLENGER,
         modelProvider: providers.challenger,
-        modelName: getDefaultModelName(providers.challenger),
-        systemPrompt: AGENT_PROMPTS[AgentRole.CHALLENGER]
+        modelName: getDefaultModelName(providers.challenger, customProviders),
+        systemPrompt: AGENT_PROMPTS[AgentRole.CHALLENGER],
+        customConfig: customProviders?.get(providers.challenger)
       },
       [AgentRole.JUDGE]: {
         role: AgentRole.JUDGE,
         modelProvider: providers.judge,
-        modelName: getDefaultModelName(providers.judge),
-        systemPrompt: AGENT_PROMPTS[AgentRole.JUDGE]
+        modelName: getDefaultModelName(providers.judge, customProviders),
+        systemPrompt: AGENT_PROMPTS[AgentRole.JUDGE],
+        customConfig: customProviders?.get(providers.judge)
       }
     }
   };
 }
 
-function getDefaultModelName(provider: ModelProvider): string {
+function getDefaultModelName(provider: ModelProvider | string, customProviders?: Map<string, CustomProviderConfig>): string {
+  // Check if it's a custom provider
+  const customProvider = customProviders?.get(provider);
+  if (customProvider) {
+    return customProvider.modelName;
+  }
+
+  // Handle built-in providers
   switch (provider) {
     case ModelProvider.ANTHROPIC:
       return 'claude-sonnet-4-5-20250929';
@@ -465,7 +544,11 @@ function getDefaultModelName(provider: ModelProvider): string {
       return 'gpt-4-turbo';
     case ModelProvider.GOOGLE:
       return 'gemini-2.0-flash-exp';
+    case ModelProvider.DEEPSEEK:
+      return 'deepseek-chat';
+    case ModelProvider.QWEN:
+      return 'qwen-turbo';
     default:
-      throw new Error(`Unknown provider: ${provider}`);
+      return 'default';
   }
 }

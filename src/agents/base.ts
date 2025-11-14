@@ -14,11 +14,17 @@ export class Agent {
   constructor(config: AgentConfig, apiKey: string) {
     this.role = config.role;
     this.config = config;
-    this.client = ModelFactory.createClient(
-      config.modelProvider,
-      apiKey,
-      config.modelName
-    );
+
+    // Use custom provider configuration if available
+    if (config.customConfig) {
+      this.client = ModelFactory.createCustomClient(config.customConfig);
+    } else {
+      this.client = ModelFactory.createClient(
+        config.modelProvider as any,
+        apiKey,
+        config.modelName
+      );
+    }
 
     // Initialize with system prompt
     this.conversationHistory.push({
