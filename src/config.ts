@@ -1,9 +1,12 @@
 /**
- * Configuration loader
+ * Configuration loader (Legacy)
+ * NOTE: This file is kept for backward compatibility.
+ * New code should use configManager from './utils/configManager.js'
  */
 
 import dotenv from 'dotenv';
 import { ModelProvider, CustomProviderConfig } from './types/index.js';
+import { logger } from './utils/logger.js';
 
 dotenv.config();
 
@@ -36,6 +39,13 @@ export function loadConfig(): Config {
     customProviders: loadCustomProviders()
   };
 
+  logger.debug('Legacy config loaded', {
+    hasAnthropicKey: !!config.apiKeys.anthropic,
+    hasOpenAIKey: !!config.apiKeys.openai,
+    hasGoogleKey: !!config.apiKeys.google,
+    debateRounds: config.debateRounds
+  });
+
   return config;
 }
 
@@ -62,6 +72,8 @@ function loadCustomProviders(): CustomProviderConfig[] {
         modelName,
         type
       });
+
+      logger.debug('Custom provider loaded', { name, modelName });
     }
 
     index++;
@@ -89,6 +101,10 @@ export function validateConfig(config: Config): { valid: boolean; errors: string
     if (totalProviders < 1) {
       errors.push('Three-Agent mode requires at least one valid provider configuration');
     }
+  }
+
+  if (errors.length > 0) {
+    logger.warn('Config validation failed', { errors });
   }
 
   return {
