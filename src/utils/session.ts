@@ -1,11 +1,14 @@
 /**
- * Session persistence utilities
+ * Session persistence utilities (Legacy)
+ * NOTE: This file is kept for backward compatibility.
+ * New code should use sessionManager from './sessionManager.js'
  */
 
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { ClarificationResult, Proposal } from '../types/index.js';
+import { logger } from './logger.js';
 
 const SESSION_DIR = path.join(os.homedir(), '.dao-code', 'sessions');
 
